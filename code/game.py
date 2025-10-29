@@ -1,14 +1,16 @@
 import pygame
 from player import Player
 from map import MapManager
+from screen import Screen
 
 class Game:
     def __init__(self,screen_size):
-        self.screen = pygame.display.set_mode(screen_size)
-        pygame.display.set_caption("Chamouraï")
+        self.screen = Screen(screen_size)
         self.clock = pygame.time.Clock()
-        self.player = Player(0, 0)
-        self.map_manager = MapManager(screen_size)
+
+        self.map = MapManager(screen_size)
+        self.player = Player(self.map.spawn.x, self.map.spawn.y)
+        self.map.group.add(self.player)
 
         self.running = True
 
@@ -17,37 +19,18 @@ class Game:
             if event.type == pygame.QUIT:
                 self.running = False
 
-            keys = pygame.key.get_pressed()
-            if keys[pygame.K_z]:
-                self.player.velocity[1] = -1
-            elif keys[pygame.K_s]:
-                self.player.velocity[1] = 1
-            else:
-                self.player.velocity[1] = 0
-
-            if keys[pygame.K_d]:
-                self.player.velocity[0] = 1
-                self.player.image = pygame.image.load('../characters/main/main_orange.png')
-            elif keys[pygame.K_q]:
-                self.player.velocity[0] = -1
-                self.player.image = pygame.image.load('../characters/main/reverse_main_orange.png')
-            else:
-                self.player.velocity[0] = 0
-
-
     def update(self):
-        self.player.move()
-        self.screen.fill((0, 0, 0))
+        self.player.update()
+        self.map.group.center(self.player.rect)
 
     def display(self):
-        self.player.draw(self.screen)
+        self.map.render(self.screen.window, (0, 0))
         pygame.display.flip()
 
     def run(self):
         while self.running:
             self.handling_events()
             self.update()
-            self.map_manager.render(self.screen, (0, 0))
             self.display()
             self.clock.tick(60)
 
