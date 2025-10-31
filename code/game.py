@@ -19,12 +19,24 @@ class Game:
             if event.type == pygame.QUIT:
                 self.running = False
 
+        pressed = pygame.key.get_pressed()
+        if pressed[pygame.K_z]:
+            self.player.move_up()
+        if pressed[pygame.K_s]:
+            self.player.move_down()
+        if pressed[pygame.K_q]:
+            self.player.move_left()
+        if pressed[pygame.K_d]:
+            self.player.move_right()
+
+
     def update(self):
         self.player.update()
+        self.map.group.update()
         self.map.group.center(self.player.rect)
 
     def display(self):
-        self.map.render(self.screen.window, (0, 0))
+        self.map.render(self.screen.window, self.player.position)
         pygame.display.flip()
 
     def run(self):

@@ -8,10 +8,19 @@ class Player(pygame.sprite.Sprite):
         self.image = self.get_image(0, 0)
         self.image.set_colorkey((0, 0, 0))
         self.rect = self.image.get_rect()
-        self.position = (x, y)
+        self.position = pygame.math.Vector2(x, y)
+        self.speed = 5
+
+    def move_up(self): self.position.y -= self.speed
+
+    def move_down(self): self.position.y += self.speed
+
+    def move_left(self): self.position.x -= self.speed
+
+    def move_right(self): self.position.x += self.speed
 
     def update(self):
-        self.rect.topleft = self.position
+        self.rect.center = self.position
 
 
     def get_image(self, x, y):
