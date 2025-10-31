@@ -1,0 +1,10 @@
+Comment installer les librairies facilement :
+
+- Ouvrir un terminal windows et aller dans la racine du dépot git ("Chamourai/")
+
+-Taper les commandes suivantes :
+	1-  python -m venv venv
+	2-  cd venv/Scripts
+	3-  activate
+	4-  pip install -r requirements.txt
+
