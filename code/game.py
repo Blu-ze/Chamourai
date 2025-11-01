@@ -1,11 +1,12 @@
 import pygame
 from player import Player
 from map import MapManager
-from screen import Screen
 
 class Game:
     def __init__(self,screen_size):
-        self.screen = Screen(screen_size)
+        self.screen_size = screen_size
+        self.screen = pygame.display.set_mode(screen_size)
+        pygame.display.set_caption("Chamouraï")
         self.clock = pygame.time.Clock()
 
         self.map = MapManager(screen_size)
@@ -36,7 +37,7 @@ class Game:
         self.map.group.center(self.player.rect)
 
     def display(self):
-        self.map.render(self.screen.window, self.player.position)
+        self.map.render(self.screen, self.player.position)
         pygame.display.flip()
 
     def run(self):
