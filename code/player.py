@@ -27,9 +27,3 @@ class Player(animation.AnimateSprite):
     def update(self):
         self.animate()
         self.rect.center = self.position
-
-
-    """def get_image(self, x, y):
-        image = pygame.Surface([128, 128])
-        image.blit(self.sprite_sheet, (0, 0), (x, y, 128, 128))
-        return image"""

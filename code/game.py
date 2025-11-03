@@ -7,6 +7,7 @@ class Game:
         self.screen_size = screen_size
         self.screen = pygame.display.set_mode(screen_size)
         pygame.display.set_caption("Chamouraï")
+
         self.clock = pygame.time.Clock()
 
         self.map = MapManager(screen_size)
