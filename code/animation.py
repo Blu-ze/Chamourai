@@ -12,30 +12,40 @@ class AnimateSprite(pygame.sprite.Sprite):
         self.animation_speed = 100
         self.last_update = pygame.time.get_ticks()
         self.direction = 'right'
+        self.last_direction = 'right'
 
     def start_animation(self):
         self.animation = True
 
     def animate(self):
-
         now = pygame.time.get_ticks()
 
+        # ⚙️ Si la direction change → reset immédiat
+        if self.direction != self.last_direction:
+            self.last_direction = self.direction
+            self.last_update = now  # remet à zéro le timer
+            if self.direction == 'right':
+                self.current_image = 0
+            else:
+                self.current_image = len(self.images) // 2
+            self.image = self.images[self.current_image]
+            return  # on quitte ici pour éviter le délai
+
+        # 🕒 Animation normale
         if self.animation and now - self.last_update > self.animation_speed:
             self.last_update = now
-
             self.current_image += 1
-            if self.direction == 'right' and self.current_image >= len(self.images)//2:
-                self.current_image = 0
-                self.animation = False
-            if self.direction == 'left' and self.current_image >= len(self.images):
-                self.current_image = 5
-                self.animation = False
 
-
+            if self.direction == 'right':
+                if self.current_image >= len(self.images) // 2:
+                    self.current_image = 0
+                    self.animation = False
+            elif self.direction == 'left':
+                if self.current_image >= len(self.images):
+                    self.current_image = 5
+                    self.animation = False
 
             self.image = self.images[self.current_image]
-            self.rect = self.image.get_rect()
-
 
 
 def get_sprite(spritesheet, x, y):
