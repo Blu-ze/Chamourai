@@ -7,6 +7,8 @@ class Weapon(animation.AnimateSprite):
         self.damage = 0
         self.position = (x, y)
 
+    def move(self, x, y):
+        self.position = (x, y)
 
-    def update(self, position):
-        self.position = position
+    def update(self):
+        self.rect.center = self.position

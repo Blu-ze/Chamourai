@@ -9,20 +9,20 @@ class Player(animation.AnimateSprite):
 
     def move_up(self):
         self.position.y -= self.speed
-        self.animation = True
+        self.start_animation()
     def move_down(self):
         self.position.y += self.speed
-        self.animation = True
+        self.start_animation()
 
     def move_left(self):
         self.position.x -= self.speed
         self.direction = 'left'
-        self.animation = True
+        self.start_animation()
 
     def move_right(self):
         self.position.x += self.speed
         self.direction = 'right'
-        self.animation = True
+        self.start_animation()
 
     def update(self):
         self.animate()

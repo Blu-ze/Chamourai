@@ -62,5 +62,6 @@ def load_animation_images(name):
 
 
 animations = {
-    'player': load_animation_images('player/spritesheet')
+    'player': load_animation_images('player/spritesheet'),
+    'sword': load_animation_images('sword/spritesheet')
 }

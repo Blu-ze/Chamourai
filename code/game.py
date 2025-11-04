@@ -1,6 +1,7 @@
 import pygame
 from player import Player
 from map import MapManager
+from weapon import Weapon
 
 class Game:
     def __init__(self,screen_size):
@@ -12,7 +13,9 @@ class Game:
 
         self.map = MapManager(screen_size)
         self.player = Player(self.map.spawn.x, self.map.spawn.y)
-        self.map.group.add(self.player)
+        self.weapon = Weapon('sword', self.map.spawn.x, self.map.spawn.y)
+        self.map.group.add(self.player, layer=2)
+        self.map.group.add(self.weapon, layer=1)
 
         self.running = True
 
@@ -24,16 +27,19 @@ class Game:
         pressed = pygame.key.get_pressed()
         if pressed[pygame.K_z]:
             self.player.move_up()
+            self.weapon.move(self.player.position.x, self.player.position.y)
         if pressed[pygame.K_s]:
             self.player.move_down()
+            self.weapon.move(self.player.position.x, self.player.position.y)
         if pressed[pygame.K_q]:
             self.player.move_left()
+            self.weapon.move(self.player.position.x, self.player.position.y)
         if pressed[pygame.K_d]:
             self.player.move_right()
+            self.weapon.move(self.player.position.x, self.player.position.y)
 
 
     def update(self):
-        self.player.update()
         self.map.group.update()
         self.map.group.center(self.player.rect)
 
