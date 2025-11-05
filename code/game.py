@@ -13,7 +13,7 @@ class Game:
 
         self.map = MapManager(screen_size)
         self.player = Player(self.map.spawn.x, self.map.spawn.y)
-        self.weapon = Weapon('sword', self.map.spawn.x, self.map.spawn.y)
+        self.weapon = Weapon('katana', self.map.spawn.x, self.map.spawn.y)
         self.map.group.add(self.player, layer=2)
         self.map.group.add(self.weapon, layer=1)
 
