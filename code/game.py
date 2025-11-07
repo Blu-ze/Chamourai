@@ -38,9 +38,15 @@ class Game:
             self.player.move_right()
             self.weapon.move(self.player.position.x, self.player.position.y)
 
-
     def update(self):
+        # appelle la méthode update de chacun des membres du groupe (player, weapon)
         self.map.group.update()
+
+        # récupère la position du joueur à l'écran
+        player_screen_position = self.map.world_to_screen(self.player.position)
+        # Fait tourner l'arme vers le curseur
+        self.weapon.rotate(player_screen_position)
+
         self.map.group.center(self.player.rect)
 
     def display(self):
