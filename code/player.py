@@ -16,12 +16,10 @@ class Player(animation.AnimateSprite):
 
     def move_left(self):
         self.position.x -= self.speed
-        self.direction = 'left'
         self.start_animation()
 
     def move_right(self):
         self.position.x += self.speed
-        self.direction = 'right'
         self.start_animation()
 
     def update(self):

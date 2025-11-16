@@ -14,8 +14,8 @@ class Game:
         self.map = MapManager(screen_size)
         self.player = Player(self.map.spawn.x, self.map.spawn.y)
         self.weapon = Weapon('katana', self.map.spawn.x, self.map.spawn.y)
-        self.map.group.add(self.player, layer=2)
-        self.map.group.add(self.weapon, layer=1)
+        self.map.group.add(self.player, layer=10)
+        self.map.group.add(self.weapon, layer=9)
 
         self.running = True
 
@@ -37,6 +37,15 @@ class Game:
         if pressed[pygame.K_d]:
             self.player.move_right()
             self.weapon.move(self.player.position.x, self.player.position.y)
+
+        mouse_position = pygame.mouse.get_pos()
+        player_screen_position = self.map.world_to_screen(self.player.position)
+        if mouse_position[0] < player_screen_position[0]:
+            self.weapon.change_direction('left')
+            self.player.change_direction('left')
+        else:
+            self.weapon.change_direction('right')
+            self.player.change_direction('right')
 
     def update(self):
         # appelle la méthode update de chacun des membres du groupe (player, weapon)

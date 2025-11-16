@@ -14,6 +14,12 @@ class AnimateSprite(pygame.sprite.Sprite):
         self.direction = 'right'
         self.last_direction = 'right'
 
+    def change_direction(self, direction):
+        if self.direction == direction:
+            return
+        else:
+            self.direction = direction
+
     def start_animation(self):
         self.animation = True
 
@@ -26,7 +32,7 @@ class AnimateSprite(pygame.sprite.Sprite):
             if self.direction == 'right':
                 self.current_image = 0
             else:
-                self.current_image = 5
+                self.current_image = len(self.images) // 2
             self.image = self.images[self.current_image]
             return
 
@@ -40,7 +46,7 @@ class AnimateSprite(pygame.sprite.Sprite):
                     self.animation = False
             elif self.direction == 'left':
                 if self.current_image >= len(self.images):
-                    self.current_image = 5
+                    self.current_image = len(self.images) // 2
                     self.animation = False
 
             self.image = self.images[self.current_image]
@@ -63,5 +69,5 @@ def load_animation_images(name, width, height, sprite_size):
 
 animations = {
     'player': load_animation_images('player/spritesheet', 640, 256, 128),
-    'katana': load_animation_images('katana/spritesheet', 4000, 400, 400)
+    'katana': load_animation_images('katana/spritesheet', 4000, 850, 400)
 }
