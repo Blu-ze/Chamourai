@@ -26,11 +26,6 @@ class Weapon(animation.AnimateSprite):
     def rotate(self, player_screen_position):
         mouse_x, mouse_y = pygame.mouse.get_pos()
 
-        # ne recalculer que si la souris bouge
-        #if (mouse_x, mouse_y) == self.last_mouse_pos:
-        #   return
-        #self.last_mouse_pos = (mouse_x, mouse_y)
-
         dx = mouse_x - player_screen_position[0]
         dy = mouse_y - player_screen_position[1]
         self.angle = math.degrees(math.atan2(-dy, dx))
