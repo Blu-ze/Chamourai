@@ -12,16 +12,17 @@ class MapManager:
             pyscroll.data.TiledMapData(self.tmx_data),                    #absorbe les données de la carte (calques)
             screen_size
         )
-        self.group = pyscroll.PyscrollGroup(map_layer=self.map_layer, default_layer=0)
+        self.map_layer.zoom = 2
 
-    def render(self, surface, center):  #fait le rendu des informations de la carte
+    def render(self, surface, center, screen_size):
         self.map_layer.center(center)
-        self.group.draw(surface)
+        screen_rect = pygame.Rect(0, 0, screen_size[0], screen_size[1])
+        self.map_layer.draw(surface, screen_rect)
 
     # Donne les coordonnées du joueur sur l'écran en fonction de ses coordonnées sur la map
     def world_to_screen(self, world_pos):
         offset_x, offset_y = self.map_layer.get_center_offset()
-        screen_x = world_pos[0] + offset_x
-        screen_y = world_pos[1] + offset_y
+        screen_x = (world_pos[0] + offset_x) * 2
+        screen_y = (world_pos[1] + offset_y) * 2
         return screen_x, screen_y
 

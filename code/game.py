@@ -14,8 +14,6 @@ class Game:
         self.map = MapManager(screen_size)
         self.player = Player(self.map.spawn.x, self.map.spawn.y)
         self.weapon = Weapon('katana', self.map.spawn.x, self.map.spawn.y)
-        self.map.group.add(self.player, layer=10)
-        self.map.group.add(self.weapon, layer=9)
 
         self.running = True
 
@@ -48,18 +46,26 @@ class Game:
             self.player.change_direction('right')
 
     def update(self):
-        # appelle la méthode update de chacun des membres du groupe (player, weapon)
-        self.map.group.update()
+        self.player.update()
+        self.weapon.update()
 
         # récupère la position du joueur à l'écran
         player_screen_position = self.map.world_to_screen(self.player.position)
         # Fait tourner l'arme vers le curseur
         self.weapon.rotate(player_screen_position)
 
-        self.map.group.center(self.player.rect)
+        #self.map.group.center(self.player.rect)
 
     def display(self):
-        self.map.render(self.screen, self.player.position)
+        self.map.render(self.screen, self.player.position, self.screen_size)
+
+        player_screen_pos = self.map.world_to_screen(self.player.position)
+        self.player.rect.center = player_screen_pos
+        self.weapon.rect.center = player_screen_pos
+
+        self.screen.blit(self.weapon.image, self.weapon.rect)
+        self.screen.blit(self.player.image, self.player.rect)
+
         pygame.display.flip()
 
     def run(self):
