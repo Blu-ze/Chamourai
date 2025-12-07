@@ -2,8 +2,8 @@ import pygame
 import animation
 
 class Player(animation.AnimateSprite):
-    def __init__(self, x, y):
-        super().__init__('player')
+    def __init__(self, x, y, animation_speed):
+        super().__init__('player', animation_speed)
         self.position = pygame.math.Vector2(x, y)
         self.speed = 5
 
@@ -23,5 +23,4 @@ class Player(animation.AnimateSprite):
         self.start_animation()
 
     def update(self):
-        self.animate()
-        self.rect.center = self.position
+        self.animate_walk()
