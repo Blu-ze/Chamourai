@@ -1,13 +1,20 @@
 import pygame
 import pytmx
 import pyscroll
+import os
 
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+def map_path(relative_path: str) -> str:
+    return os.path.join(BASE_DIR, relative_path)
 
 class MapManager:
 
     def __init__(self, screen_size):
-        self.tmx_data = pytmx.util_pygame.load_pygame("../map/spawn.tmx")   #données brutes de la carte
+        self.tmx_data = pytmx.util_pygame.load_pygame(map_path('map/spawn.tmx'))   #données brutes de la carte
+
         self.spawn = self.tmx_data.get_object_by_name("PlayerSpawn")      #prend la position de spawn du joueur
+
         self.map_layer = pyscroll.BufferedRenderer(                       #lit les données de la carte
             pyscroll.data.TiledMapData(self.tmx_data),                    #absorbe les données de la carte (calques)
             screen_size

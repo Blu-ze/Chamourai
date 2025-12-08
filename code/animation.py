@@ -1,4 +1,11 @@
 import pygame
+import os
+
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+def asset_path(relative_path):
+    return os.path.join(BASE_DIR, relative_path)
+
 
 class AnimateSprite(pygame.sprite.Sprite):
 
@@ -88,7 +95,7 @@ def get_sprite(spritesheet, x, y, l):
 
 def load_animation_images(name, width, height, sprite_size):
     images = []
-    spritesheet = pygame.image.load(f'../assets/{name}.png')
+    spritesheet = pygame.image.load(asset_path(f'assets/{name}.png'))
     for y in range(0, height, sprite_size):
         for x in range(0, width, sprite_size):
             images.append(get_sprite(spritesheet, x, y, sprite_size))
