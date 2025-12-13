@@ -23,4 +23,5 @@ class Player(animation.AnimateSprite):
         self.start_animation()
 
     def update(self):
+        self.rect.center = self.position
         self.animate_walk()

@@ -26,7 +26,6 @@ class AnimateSprite(pygame.sprite.Sprite):
         if self.direction != direction:
             self.direction = direction
 
-
     def start_animation(self):
         self.animation = True
 
@@ -88,21 +87,38 @@ class AnimateSprite(pygame.sprite.Sprite):
 
 
 def get_sprite(spritesheet, x, y, l):
-    sprite = pygame.Surface([l, l])
-    sprite.blit(spritesheet, (0, 0), (x, y, l, l))
+    sprite = pygame.Surface([l[0], l[1]])
+    sprite.blit(spritesheet, (0, 0), (x, y, l[0], l[1]))
     sprite.set_colorkey((0, 0, 0))
     return sprite
 
-def load_animation_images(name, width, height, sprite_size):
+def load_animation_images(name, size, sprite_size, scale=1.0):
     images = []
     spritesheet = pygame.image.load(asset_path(f'assets/{name}.png'))
-    for y in range(0, height, sprite_size):
-        for x in range(0, width, sprite_size):
-            images.append(get_sprite(spritesheet, x, y, sprite_size))
+
+    for y in range(0, size[1], sprite_size[1]):
+        for x in range(0, size[0], sprite_size[0]):
+            sprite = get_sprite(spritesheet, x, y, sprite_size)
+            if scale != 1.0:
+                new_size = (
+                    int(sprite.get_width() * scale),
+                    int(sprite.get_height() * scale)
+                )
+                sprite = pygame.transform.scale(sprite, new_size)
+            images.append(sprite)
     return images
 
 
+
 animations = {
-    'player': load_animation_images('player/spritesheet', 640, 256, 128),
-    'katana': load_animation_images('katana/spritesheet', 4000, 800, 400)
+    'player': load_animation_images(
+        'player/spritesheet', [640, 256], [128, 128], scale=0.5
+    ),
+    'katana': load_animation_images(
+        'katana/spritesheet', [2000, 400], [200, 200], scale=1
+    ),
+    'skeleton': load_animation_images(
+        'mobs/Skeleton/SkeletonIdle', [364, 32], [24, 32], scale=2
+    )
 }
+

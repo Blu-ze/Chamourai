@@ -1,11 +1,19 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.10" tiledversion="1.11.2" orientation="orthogonal" renderorder="right-down" width="74" height="70" tilewidth="32" tileheight="32" infinite="0" nextlayerid="35" nextobjectid="7">
+<map version="1.10" tiledversion="1.11.2" orientation="orthogonal" renderorder="right-down" width="74" height="70" tilewidth="32" tileheight="32" infinite="0" nextlayerid="36" nextobjectid="12">
  <tileset firstgid="1" source="tilesets/Tileset.tsx"/>
  <tileset firstgid="121" source="tilesets/Decorations.tsx"/>
  <tileset firstgid="377" source="tilesets/houses.tsx"/>
  <tileset firstgid="1401" source="tilesets/cave entrance.tsx"/>
  <objectgroup id="14" name="PlayerSpawn">
   <object id="4" name="PlayerSpawn" x="1397" y="1021">
+   <point/>
+  </object>
+ </objectgroup>
+ <objectgroup id="35" name="MobSpawn">
+  <object id="7" name="MobSpawn" x="1514" y="1020.67">
+   <point/>
+  </object>
+  <object id="9" x="1208" y="1068">
    <point/>
   </object>
  </objectgroup>

@@ -2,6 +2,7 @@ import pygame
 from player import Player
 from map import MapManager
 from weapon import Weapon
+from mob import Mob
 
 class Game:
     def __init__(self,screen_size):
@@ -13,7 +14,11 @@ class Game:
 
         self.map = MapManager(screen_size)
         self.player = Player(self.map.spawn.x, self.map.spawn.y, 100)
+        self.skeleton = Mob('skeleton', self.map.mob_spawn.x, self.map.mob_spawn.y, 100)
         self.weapon = Weapon('katana', self.map.spawn.x, self.map.spawn.y, 30)
+        self.map.group.add(self.player, layer=10)
+        self.map.group.add(self.weapon, layer=9)
+        self.map.group.add(self.skeleton, layer=8)
 
         self.running = True
 
@@ -53,24 +58,11 @@ class Game:
                 self.weapon.change_direction('right')
 
     def update(self):
-        self.player.update()
-        self.weapon.update()
-
-        # récupère la position du joueur à l'écran
-        player_screen_position = self.map.world_to_screen(self.player.position)
-        self.weapon.rotate(player_screen_position)
-
+        self.map.group.update()
+        self.weapon.rotate(self.player.position, self.map.map_layer)
 
     def display(self):
-        self.map.render(self.screen, self.player.position, self.screen_size)
-
-        player_screen_pos = self.map.world_to_screen(self.player.position)
-        self.player.rect.center = player_screen_pos
-        self.weapon.rect.center = (player_screen_pos[0], player_screen_pos[1]+15)
-
-        self.screen.blit(self.weapon.image, self.weapon.rect)
-        self.screen.blit(self.player.image, self.player.rect)
-
+        self.map.render(self.screen, self.player.position)
         pygame.display.flip()
 
     def run(self):
