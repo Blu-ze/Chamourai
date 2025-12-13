@@ -1,3 +1,5 @@
+from time import sleep
+
 import pygame
 import animation
 import math
@@ -19,28 +21,37 @@ class Weapon(animation.AnimateSprite):
     def move(self, x, y):
         self.position = (x, y)
 
+    def hit(self):
+        self.start_animation()
+
     def update(self):
+        self.rect.center = self.position
         self.animate_hit()
 
-    def rotate(self, player_screen_position):
+    def rotate(self, player_world_pos, map_layer):
         if not self.animation:
             mouse_x, mouse_y = pygame.mouse.get_pos()
 
-            dx = mouse_x - player_screen_position[0]
-            dy = mouse_y - player_screen_position[1]
+            player_screen_x, player_screen_y = map_layer.translate_point(player_world_pos)
+
+            dx = mouse_x - player_screen_x
+            dy = mouse_y - player_screen_y
+
             self.angle = math.degrees(math.atan2(-dy, dx))
 
-            # on repart toujours de l'image d'origine
             if self.direction == 'right':
-                self.image = pygame.transform.rotate(self.original_image_right, self.angle-90)
+                self.image = pygame.transform.rotate(
+                    self.original_image_right, self.angle - 90
+                )
             else:
-                self.image = pygame.transform.rotate(self.original_image_left, self.angle-90)
+                self.image = pygame.transform.rotate(
+                    self.original_image_left, self.angle - 90
+                )
 
-        self.rect = self.image.get_rect()
+        self.rect = self.image.get_rect(center=self.position)
 
 
-    def hit(self):
-        self.start_animation()
+
 
 
 

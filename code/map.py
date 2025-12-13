@@ -14,6 +14,7 @@ class MapManager:
         self.tmx_data = pytmx.util_pygame.load_pygame(map_path('map/spawn.tmx'))   #données brutes de la carte
 
         self.spawn = self.tmx_data.get_object_by_name("PlayerSpawn")      #prend la position de spawn du joueur
+        self.mob_spawn = self.tmx_data.get_object_by_name("MobSpawn")
 
         self.map_layer = pyscroll.BufferedRenderer(                       #lit les données de la carte
             pyscroll.data.TiledMapData(self.tmx_data),                    #absorbe les données de la carte (calques)
@@ -21,10 +22,14 @@ class MapManager:
         )
         self.map_layer.zoom = 2.5
 
-    def render(self, surface, center, screen_size):
-        self.map_layer.center(center)
-        screen_rect = pygame.Rect(0, 0, screen_size[0], screen_size[1])
-        self.map_layer.draw(surface, screen_rect)
+        self.group = pyscroll.PyscrollGroup(
+            map_layer=self.map_layer,
+            default_layer=0
+        )
+
+    def render(self, surface, center):
+        self.group.center(center)
+        self.group.draw(surface)
 
     # Donne les coordonnées du joueur sur l'écran en fonction de ses coordonnées sur la map
     def world_to_screen(self, world_pos):
