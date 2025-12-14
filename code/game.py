@@ -13,7 +13,7 @@ class Game:
         self.clock = pygame.time.Clock()
 
         self.map = MapManager(screen_size)
-        self.player = Player(self.map.spawn.x, self.map.spawn.y, 100)
+        self.player = Player(self.map.spawn.x, self.map.spawn.y, 130)
         self.skeleton = Mob('skeleton', self.map.mob_spawn.x, self.map.mob_spawn.y, 100)
         self.weapon = Weapon('katana', self.map.spawn.x, self.map.spawn.y, 30)
         self.map.group.add(self.player, layer=10)

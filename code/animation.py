@@ -112,7 +112,7 @@ def load_animation_images(name, size, sprite_size, scale=1.0):
 
 animations = {
     'player': load_animation_images(
-        'player/spritesheet', [640, 256], [128, 128], scale=0.5
+        'player/spritesheet', [320, 128], [64, 64], scale=1
     ),
     'katana': load_animation_images(
         'katana/spritesheet', [2000, 400], [200, 200], scale=1
