@@ -17,8 +17,9 @@ class Weapon(animation.AnimateSprite):
         self.original_image_left = self.images[len(self.images)//2]
 
         # 📍 coordonnées du manche DANS le sprite
-        handle_x = 63
-        handle_y = 69
+        handle_x = 57
+        handle_y = 67
+
 
         w, h = self.original_image_right.get_size()
         image_center = pygame.math.Vector2(w / 2, h / 2)
