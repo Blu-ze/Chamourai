@@ -6,7 +6,7 @@ import math
 
 class Weapon(animation.AnimateSprite):
     def __init__(self, weapon_name, x, y, animation_speed):
-        super().__init__(weapon_name, animation_speed)
+        super().__init__(weapon_name, animation_speed, True)
         self.damage = 0
         self.position = (x, y)
 
