@@ -108,14 +108,19 @@ class AnimateSprite(pygame.sprite.Sprite):
             self.image = self.images[self.current_image]
 
 
-def get_sprite(spritesheet, x, y, l):
+"""def get_sprite(spritesheet, x, y, l):
     sprite = pygame.Surface([l[0], l[1]])
     sprite.blit(spritesheet, (0, 0), (x, y, l[0], l[1]))
     sprite.set_colorkey((0, 0, 0))
+    return sprite"""
+def get_sprite(spritesheet, x, y, l):
+    sprite = pygame.Surface(l, pygame.SRCALPHA)
+    sprite.blit(spritesheet, (0, 0), (x, y, l[0], l[1]))
     return sprite
 
 def load_animation_images(name, size, sprite_size, scale=1.0):
     images = []
+    #spritesheet = pygame.image.load(asset_path(f'assets/{name}.png'))
     spritesheet = pygame.image.load(asset_path(f'assets/{name}.png'))
 
     for y in range(0, size[1], sprite_size[1]):
