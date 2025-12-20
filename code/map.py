@@ -20,7 +20,7 @@ class MapManager:
             pyscroll.data.TiledMapData(self.tmx_data),                    #absorbe les données de la carte (calques)
             screen_size
         )
-        self.map_layer.zoom = 2.5
+        self.map_layer.zoom = 3.5
 
         self.group = pyscroll.PyscrollGroup(
             map_layer=self.map_layer,
@@ -34,7 +34,7 @@ class MapManager:
     # Donne les coordonnées du joueur sur l'écran en fonction de ses coordonnées sur la map
     def world_to_screen(self, world_pos):
         offset_x, offset_y = self.map_layer.get_center_offset()
-        screen_x = (world_pos[0] + offset_x) * 2.5
-        screen_y = (world_pos[1] + offset_y) * 2.5
+        screen_x = (world_pos[0] + offset_x) * self.map_layer.zoom
+        screen_y = (world_pos[1] + offset_y) * self.map_layer.zoom
         return screen_x, screen_y
 

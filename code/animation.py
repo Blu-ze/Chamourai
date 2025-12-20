@@ -9,9 +9,13 @@ def asset_path(relative_path):
 
 class AnimateSprite(pygame.sprite.Sprite):
 
-    def __init__(self, name, animation_speed):
+    def __init__(self, name, animation_speed, weapon):
         super().__init__()
-        self.images = animations.get(name)
+        self.name = name
+        if weapon:
+            self.images = animations.get(f"{self.name}")
+        else:
+            self.images = animations.get(f"{self.name}_idle")
         self.image = self.images[0]
         self.angle = 0
         self.rect = self.image.get_rect()
@@ -85,15 +89,38 @@ class AnimateSprite(pygame.sprite.Sprite):
 
             self.image = pygame.transform.rotate(self.images[self.current_image], self.angle-90)
 
+    def animate_idle(self):
+        now = pygame.time.get_ticks()
+        if not self.animation and now - self.last_update > self.animation_speed:
+            self.images = animations.get(f"{self.name}_idle")
+            self.last_update = now
+            self.current_image += 1
 
-def get_sprite(spritesheet, x, y, l):
+            if self.direction == 'right':
+                if self.current_image >= len(self.images) // 2:
+                    self.current_image = 0
+                    self.animation = False
+            elif self.direction == 'left':
+                if self.current_image >= len(self.images):
+                    self.current_image = len(self.images) // 2
+                    self.animation = False
+
+            self.image = self.images[self.current_image]
+
+
+"""def get_sprite(spritesheet, x, y, l):
     sprite = pygame.Surface([l[0], l[1]])
     sprite.blit(spritesheet, (0, 0), (x, y, l[0], l[1]))
     sprite.set_colorkey((0, 0, 0))
+    return sprite"""
+def get_sprite(spritesheet, x, y, l):
+    sprite = pygame.Surface(l, pygame.SRCALPHA)
+    sprite.blit(spritesheet, (0, 0), (x, y, l[0], l[1]))
     return sprite
 
 def load_animation_images(name, size, sprite_size, scale=1.0):
     images = []
+    #spritesheet = pygame.image.load(asset_path(f'assets/{name}.png'))
     spritesheet = pygame.image.load(asset_path(f'assets/{name}.png'))
 
     for y in range(0, size[1], sprite_size[1]):
@@ -111,13 +138,13 @@ def load_animation_images(name, size, sprite_size, scale=1.0):
 
 
 animations = {
-    'player': load_animation_images(
-        'player/spritesheet', [640, 256], [128, 128], scale=0.5
+    'player_idle': load_animation_images(
+        'player/spritesheet', [320, 128], [64, 64], scale=1
     ),
     'katana': load_animation_images(
-        'katana/spritesheet', [2000, 400], [200, 200], scale=1
+        'katana/spritesheet', [1250, 160], [125, 80], scale=0.9
     ),
-    'skeleton': load_animation_images(
+    'skeleton_idle': load_animation_images(
         'mobs/Skeleton/SkeletonIdle', [364, 32], [24, 32], scale=2
     )
 }
