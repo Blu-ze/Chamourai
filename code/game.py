@@ -16,9 +16,11 @@ class Game:
         self.player = Player(self.map.spawn.x, self.map.spawn.y, 130)
         self.skeleton = Mob('skeleton', self.map.mob_spawn.x, self.map.mob_spawn.y, 100)
         self.weapon = Weapon('katana', self.map.spawn.x, self.map.spawn.y, 30)
-        self.map.group.add(self.player, layer=10)
-        self.map.group.add(self.weapon, layer=9)
-        self.map.group.add(self.skeleton, layer=8)
+
+        self.map.group.add(self.skeleton, layer=18)
+        self.map.group.add(self.weapon, layer=17)
+        self.map.group.add(self.player, layer=18)
+
 
         self.running = True
 
