@@ -2,7 +2,7 @@ import pygame
 from player import Player
 from map import MapManager
 from weapon import Weapon
-from mob import Mob
+
 
 class Game:
     def __init__(self,screen_size):
@@ -14,10 +14,10 @@ class Game:
 
         self.map = MapManager(screen_size)
         self.player = Player(self.map.spawn.x, self.map.spawn.y, 130)
-        self.skeleton = Mob('skeleton', self.map.mob_spawn.x, self.map.mob_spawn.y, 100)
+
         self.weapon = Weapon('katana', self.map.spawn.x, self.map.spawn.y, 30)
 
-        self.map.group.add(self.skeleton, layer=18)
+
         self.map.group.add(self.weapon, layer=17)
         self.map.group.add(self.player, layer=18)
 
@@ -35,18 +35,15 @@ class Game:
 
 
         pressed = pygame.key.get_pressed()
-        if pressed[pygame.K_z]:
-            self.player.move_up()
-            self.weapon.move(self.player.position.x, self.player.position.y)
-        if pressed[pygame.K_s]:
-            self.player.move_down()
-            self.weapon.move(self.player.position.x, self.player.position.y)
+        self.player.velocity.update(0, 0)
         if pressed[pygame.K_q]:
-            self.player.move_left()
-            self.weapon.move(self.player.position.x, self.player.position.y)
+            self.player.velocity.x = -self.player.speed
         if pressed[pygame.K_d]:
-            self.player.move_right()
-            self.weapon.move(self.player.position.x, self.player.position.y)
+            self.player.velocity.x = self.player.speed
+        if pressed[pygame.K_z]:
+            self.player.velocity.y = -self.player.speed
+        if pressed[pygame.K_s]:
+            self.player.velocity.y = self.player.speed
 
         mouse_position = pygame.mouse.get_pos()
         player_screen_position = self.map.world_to_screen(self.player.position)
@@ -60,15 +57,29 @@ class Game:
                 self.weapon.change_direction('right')
 
     def update(self):
+        self.player.move(self.map.collisions)
+        self.weapon.move(self.player.position.x, self.player.position.y)
         self.map.group.update()
         self.weapon.rotate(self.player.position, self.map.map_layer)
 
     def display(self):
         self.map.render(self.screen, self.player.position)
+
+        """feet = self.player.feet
+        x, y = self.map.world_to_screen(feet.topleft)
+        rect = pygame.Rect(
+            x,
+            y,
+            feet.width * self.map.map_layer.zoom,
+            feet.height * self.map.map_layer.zoom
+        )
+        pygame.draw.rect(self.screen, (255, 0, 0), rect, 2)"""
+
         pygame.display.flip()
 
     def run(self):
         while self.running:
+            self.player.save_location()
             self.handling_events()
             self.update()
             self.display()

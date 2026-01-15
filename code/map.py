@@ -2,6 +2,7 @@ import pygame
 import pytmx
 import pyscroll
 import os
+from mob import Mob
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -26,6 +27,14 @@ class MapManager:
             map_layer=self.map_layer,
             default_layer=0
         )
+
+        self.skeleton = Mob('skeleton', self.mob_spawn.x, self.mob_spawn.y, 100)
+        self.group.add(self.skeleton, layer=18)
+
+        self.collisions = []
+        for obj in self.tmx_data.objects:
+            if obj.type == "collision":
+                self.collisions.append(pygame.Rect(obj.x, obj.y, obj.width, obj.height))
 
     def render(self, surface, center):
         self.group.center(center)
