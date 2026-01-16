@@ -1,6 +1,13 @@
 # menu.py
 import pygame
 import sys
+import os
+
+
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+def asset_path(relative_path):
+    return os.path.join(BASE_DIR, relative_path)
 
 class Button:
     def __init__(self, text, x, y, width, height, color, hover_color, font_size=32):
@@ -38,7 +45,7 @@ class Interface:
         spacing = 20
         start_y = 300
 
-        self.background = pygame.image.load("../assets/Chamourai.png").convert()
+        self.background = pygame.image.load(asset_path(f'assets/Chamourai.png')).convert()
         self.background = pygame.transform.scale(self.background, screen_size)
         
         self.buttons = [
