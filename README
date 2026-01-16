@@ -1,10 +1,17 @@
-Comment installer les librairies facilement :
+Comment lancer le jeu la première fois :
+
+- Prérequis nécessaire : Avoir Python installé sur son ordinateur (version récente de préférence)
+	Téléchargeable via : https://www.python.org/
 
 - Ouvrir un terminal windows et aller dans la racine du dépot git ("Chamourai/")
 
--Taper les commandes suivantes :
+- Taper les commandes suivantes :
 	1-  python -m venv venv
 	2-  cd venv/Scripts
 	3-  activate
 	4-  pip install -r ../../requirements.txt
 
+	Vous pouvez maintenant fermer le terminal.
+
+
+- Exécuter le fichier .bat appelé "run"
