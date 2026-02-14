@@ -16,7 +16,6 @@ class Player(animation.AnimateSprite):
     def move(self, collisions):
         moved = False
 
-        # X
         if self.velocity.x != 0:
             self.position.x += self.velocity.x
             self.rect.center = self.position
@@ -27,7 +26,6 @@ class Player(animation.AnimateSprite):
             else:
                 moved = True
 
-        # Y
         if self.velocity.y != 0:
             self.position.y += self.velocity.y
             self.rect.center = self.position
@@ -37,10 +35,6 @@ class Player(animation.AnimateSprite):
                 self.position.y -= self.velocity.y
             else:
                 moved = True
-
-        # update final
-        self.rect.center = self.position
-        self.feet.midbottom = self.rect.midbottom
 
         if moved:
             self.start_animation()

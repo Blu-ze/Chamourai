@@ -64,17 +64,6 @@ class Game:
 
     def display(self):
         self.map.render(self.screen, self.player.position)
-
-        """feet = self.player.feet
-        x, y = self.map.world_to_screen(feet.topleft)
-        rect = pygame.Rect(
-            x,
-            y,
-            feet.width * self.map.map_layer.zoom,
-            feet.height * self.map.map_layer.zoom
-        )
-        pygame.draw.rect(self.screen, (255, 0, 0), rect, 2)"""
-
         pygame.display.flip()
 
     def run(self):
