@@ -211,36 +211,42 @@ class Interface:
             clock.tick(60)
 
     def run_join_salon(self, network):
-        clock   = pygame.time.Clock()
-        W, H    = self.screen_size
-        box     = InputBox(W//2 - 100, H//2, 200, 70)
-        confirm = Button("Rejoindre", W//2 - 150, H//2 + 100, 300, 55, (70,130,240), (90,150,255))
-        error   = ""
+        import threading
+        clock = pygame.time.Clock()
+        W, H = self.screen_size
+        box = InputBox(W // 2 - 100, H // 2, 200, 70)
+        confirm = Button("Rejoindre", W // 2 - 150, H // 2 + 100, 300, 55, (70, 130, 240), (90, 150, 255))
+        error = ""
+        success = ""
 
         while True:
             clicked = False
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
-                    pygame.quit(); sys.exit()
+                    pygame.quit();
+                    sys.exit()
                 if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                     clicked = True
                 box.handle_event(event)
 
             mouse = pygame.mouse.get_pos()
             self._draw_bg()
-            self._draw_text("Entrez le code du salon", self.font_normal, (255,255,255), (W//2, H//2 - 80))
+            self._draw_text("Entrez le code du salon", self.font_normal, (255, 255, 255), (W // 2, H // 2 - 80))
             box.draw(self.screen)
             confirm.check_hover(mouse)
             confirm.draw(self.screen)
 
             if error:
-                self._draw_text(error, self.font_small, (255, 80, 80), (W//2, H//2 + 180))
+                self._draw_text(error, self.font_small, (255, 80, 80), (W // 2, H // 2 + 180))
+            if success:
+                self._draw_text(success, self.font_normal, (100, 255, 100), (W // 2, H // 2 + 180))
+                return {"status": "ok"}
 
             if confirm.is_clicked(mouse, clicked):
                 if len(box.text) == 4:
                     result = network.join_salon(box.text)
                     if result.get("status") == "ok":
-                        return result
+                        success = f"Salon {box.text} rejoint ! En attente de l'hôte..."
                     else:
                         error = result.get("msg", "Code invalide")
                         box.text = ""
@@ -249,3 +255,42 @@ class Interface:
 
             pygame.display.flip()
             clock.tick(60)
+
+    def run_waiting_for_host(self, network):
+        """Affiche un écran d'attente pendant que le guest attend le START de l'hôte."""
+        import threading
+        clock = pygame.time.Clock()
+        W, H = self.screen_size
+        result = [None]
+        received = [False]
+
+        def wait_for_start():
+            try:
+                result[0] = network.recv_raw()
+                received[0] = True
+            except:
+                received[0] = True
+
+        threading.Thread(target=wait_for_start, daemon=True).start()
+
+        dots = 0
+        timer = 0
+        while not received[0]:
+            clock.tick(60)
+            timer += 1
+            if timer % 30 == 0:
+                dots = (dots + 1) % 4
+
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit();
+                    sys.exit()
+
+            self._draw_bg()
+            self._draw_text(
+                "En attente du lancement par l'hôte" + "." * dots,
+                self.font_normal, (200, 200, 200), (W // 2, H // 2)
+            )
+            pygame.display.flip()
+
+        return result[0]

@@ -90,23 +90,21 @@ def mob_loop(code):
                 }
 
 def threaded_client(conn):
-    """Gère un client : lobby puis jeu."""
     try:
-        # Première action : le client envoie soit "CREATE" soit "JOIN:CODE"
         action = pickle.loads(conn.recv(2048))
 
         if action == "CREATE":
             with salons_lock:
                 code = generate_code()
                 salons[code] = {
-                    "players": [conn, None],
-                    "states":  [
+                    "players":   [conn, None],
+                    "states":    [
                         {"x": spawn1.x, "y": spawn1.y, "dir": "right", "state": "idle"},
                         {"x": spawn2.x, "y": spawn2.y, "dir": "right", "state": "idle"}
                     ],
-                    "started":  False,
-                    "mob":      {"x": mob_spawn.x, "y": mob_spawn.y, "dir": "right", "state": "idle"},
-                    "skeleton": None,
+                    "started":   False,
+                    "mob":       {"x": mob_spawn.x, "y": mob_spawn.y, "dir": "right", "state": "idle"},
+                    "skeleton":  None,
                     "host_conn": conn
                 }
             conn.sendall(pickle.dumps({"status": "ok", "code": code, "player": 0}))
@@ -122,7 +120,7 @@ def threaded_client(conn):
                     break
                 pygame.time.wait(100)
 
-            # Attendre que l'hôte lance la partie
+            # Attendre START de l'hôte
             while True:
                 try:
                     msg = pickle.loads(conn.recv(2048))
@@ -132,14 +130,20 @@ def threaded_client(conn):
                             sk = Mob('skeleton', mob_spawn.x, mob_spawn.y, 100)
                             sk.init_pathfinding(collisions)
                             salons[code]["skeleton"] = sk
+                            guest_conn = salons[code]["players"][1]
+
+                        # Envoyer spawn aux deux joueurs
+                        guest_conn.sendall(pickle.dumps({
+                            "status": "start",
+                            "spawn":  salons[code]["states"][1]
+                        }))
+                        conn.sendall(pickle.dumps({
+                            "status": "start",
+                            "spawn":  salons[code]["states"][0]
+                        }))
                         start_new_thread(mob_loop, (code,))
-                        # Envoyer spawn au guest
-                        with salons_lock:
-                            salons[code]["players"][1].sendall(
-                                pickle.dumps({"status": "start", "spawn": salons[code]["states"][1]})
-                            )
-                        conn.sendall(pickle.dumps({"status": "start", "spawn": salons[code]["states"][0]}))
                         break
+
                     elif msg == "PING":
                         with salons_lock:
                             guest_connected = salons[code]["players"][1] is not None
@@ -162,25 +166,19 @@ def threaded_client(conn):
             conn.sendall(pickle.dumps({"status": "ok", "player": 1}))
             print(f"Joueur 2 rejoint le salon {code}")
 
-            # Attendre le START envoyé par l'hôte
-            while True:
-                with salons_lock:
-                    if code not in salons:
-                        return
-                    started = salons[code]["started"]
-                if started:
-                    break
-                pygame.time.wait(100)
-
-            # Recevoir le spawn envoyé depuis le thread hôte
-            spawn_msg = pickle.loads(conn.recv(2048))
+            # Attendre le START (envoyé directement par le thread hôte)
+            start_msg = pickle.loads(conn.recv(2048))
+            # Renvoyer confirmation
             conn.sendall(pickle.dumps({"status": "ready"}))
+
             player_index = 1
+            # start_msg contient déjà {"status": "start", "spawn": {...}}
+            # Le spawn a déjà été envoyé, on entre directement en boucle de jeu
 
         else:
             return
 
-        # ── Boucle de jeu ─────────────────────────────────────────────────────
+        # ── Boucle de jeu ────────────────────────────────────────────────────
         while True:
             data = pickle.loads(conn.recv(2048))
             if not data:

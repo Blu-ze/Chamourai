@@ -14,7 +14,7 @@ screen_size = (1280, 720)
 interface   = Interface(screen_size, win)
 
 
-def run_game(network, spawn_data):
+def run_game(network, spawn_data, player_index=0):
     map_manager = MapManager(screen_size)
 
     p  = Player(spawn_data["x"], spawn_data["y"], 130)
@@ -33,7 +33,7 @@ def run_game(network, spawn_data):
             if event.type == pygame.QUIT:
                 pygame.quit(); sys.exit()
             if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
-                return  # retour au menu
+                return
             if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                 p.weapon.hit()
 
@@ -48,7 +48,7 @@ def run_game(network, spawn_data):
             "state": p.state
         })
 
-        if data:
+        if data and "player" in data:
             p2.position.x = data["player"]["x"]
             p2.position.y = data["player"]["y"]
             p2.direction  = data["player"]["dir"]
@@ -85,11 +85,20 @@ while True:
             if result and result.get("status") == "start":
                 run_game(network, result["spawn"])
 
+
+
+
         elif action == "join":
+
             network = Network()
-            result  = interface.run_join_salon(network)
+
+            result = interface.run_join_salon(network)
+
             if result and result.get("status") == "ok":
-                start_msg = network.recv_raw()
-                if start_msg.get("status") == "start":
+
+                start_msg = interface.run_waiting_for_host(network)
+
+                if start_msg and start_msg.get("status") == "start":
                     network.send_raw({"status": "ready"})
-                    run_game(network, start_msg["spawn"])
+
+                    run_game(network, start_msg["spawn"], player_index=1)
