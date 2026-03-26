@@ -6,6 +6,8 @@ DETECTION_RADIUS  = 400
 ATTACK_RADIUS     = 40
 PATHFIND_INTERVAL = 500
 WAYPOINT_THRESHOLD = 16
+MAX_HP = 500
+HIT_FLASH_DURATION = 200  # ms
 
 class Mob(animation.AnimateSprite):
 
@@ -22,6 +24,12 @@ class Mob(animation.AnimateSprite):
         self.old_position      = self.position.copy()
         self._frame_index      = 0
         self._last_frame_ms    = pygame.time.get_ticks()
+        self.hp = MAX_HP
+        self.hit_flash_until = 0
+        self.alive = True
+        self.is_hit = False
+        self.hit_anim_index = 0
+        self.hit_anim_until = 0
 
     def init_pathfinding(self, collisions):
         self.blocked_cells = build_collision_set(collisions)
@@ -102,9 +110,16 @@ class Mob(animation.AnimateSprite):
             self.set_direction('right')
 
     def update(self):
-        self.rect.center    = self.position
+        self.rect.center = self.position
         self.feet.midbottom = self.rect.midbottom
-        if self.state in ('idle', 'attack'):
+
+        now = pygame.time.get_ticks()
+
+        if self.is_hit:
+            self._animate_frames('skeleton_hit')
+            if now > self.hit_anim_until:
+                self.is_hit = False
+        elif self.state in ('idle', 'attack'):
             self._animate_frames('skeleton_idle')
         else:
             self._animate_frames('skeleton_walk')
@@ -126,3 +141,15 @@ class Mob(animation.AnimateSprite):
             self.image = pygame.transform.flip(raw_frame, True, False)
         else:
             self.image = raw_frame
+
+    def take_damage(self, amount=1):
+        if not self.alive:
+            return
+        self.hp -= amount
+        self.is_hit = True
+        self.hit_anim_until = pygame.time.get_ticks() + HIT_FLASH_DURATION
+        self._frame_index = 0
+        if self.hp <= 0:
+            self.hp = 0
+            self.alive = False
+            self.kill()  # retire le sprite du groupe pyscroll

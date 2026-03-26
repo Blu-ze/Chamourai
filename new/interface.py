@@ -70,7 +70,7 @@ class Interface:
         cx      = (W - bw) // 2
 
         self.main_buttons = [
-            Button("Solo",        cx, start_y,                  bw, bh, (70,130,240), (90,150,255)),
+            Button("1 Joueur",    cx, start_y,                  bw, bh, (70,130,240), (90,150,255)),
             Button("Multijoueur", cx, start_y + bh + spacing,   bw, bh, (70,130,240), (90,150,255)),
             Button("Options",     cx, start_y + 2*(bh+spacing), bw, bh, (70,130,240), (90,150,255)),
             Button("Quitter",     cx, start_y + 3*(bh+spacing), bw, bh, (200,50,50),  (220,70,70)),
@@ -116,7 +116,7 @@ class Interface:
                 btn.check_hover(mouse)
                 btn.draw(self.screen)
                 if btn.is_clicked(mouse, clicked):
-                    if btn.text == "Solo":
+                    if btn.text == "1 Joueur":
                         return "solo"
                     elif btn.text == "Multijoueur":
                         return "multi"

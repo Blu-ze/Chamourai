@@ -132,4 +132,7 @@ animations = {
     'skeleton_walk': load_animation_images(
         'mobs/Skeleton/SkeletonWalk', [286, 33], [22, 33], scale=2
     ),
+    'skeleton_hit': load_animation_images(
+        'mobs/Skeleton/SkeletonHit', [240, 32], [30, 32], scale=2
+    ),
 }

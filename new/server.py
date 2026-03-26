@@ -189,7 +189,19 @@ def threaded_client(conn):
                     break
                 salons[code]["states"][player_index] = data
                 other = salons[code]["states"][1 - player_index]
-                mob   = salons[code]["mob"]
+                mob = salons[code]["mob"]
+                skeleton = salons[code]["skeleton"]
+
+                # Détection de coup : le joueur envoie "hit" = True
+                if data.get("hit") and skeleton and skeleton.alive:
+                    mob_rect = pygame.Rect(mob["x"] - 20, mob["y"] - 20, 40, 40)
+                    weapon_rect = data.get("weapon_rect")
+                    if weapon_rect:
+                        wr = pygame.Rect(weapon_rect)
+                        if wr.colliderect(mob_rect):
+                            skeleton.take_damage(1)
+                            mob["hp"] = skeleton.hp
+                            mob["alive"] = skeleton.alive
 
             reply = {"player": other, "mob": mob}
             conn.sendall(pickle.dumps(reply))

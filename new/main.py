@@ -41,11 +41,18 @@ def run_game(network, spawn_data, player_index=0):
         map_manager.render(win, (p.position.x, p.position.y))
         p.move(map_manager)
 
+        weapon_rect = None
+        if p.weapon.hitbox:
+            r = p.weapon.hitbox
+            weapon_rect = (r.x, r.y, r.width, r.height)
+
         data = network.send({
-            "x":     p.position.x,
-            "y":     p.position.y,
-            "dir":   p.direction,
-            "state": p.state
+            "x": p.position.x,
+            "y": p.position.y,
+            "dir": p.direction,
+            "state": p.state,
+            "hit": p.weapon.animation,
+            "weapon_rect": weapon_rect
         })
 
         if data and "player" in data:
@@ -65,13 +72,52 @@ def run_game(network, spawn_data, player_index=0):
         p2.update_animation()
         pygame.display.update()
 
+        # Affichage PV du mob
+        if data and "mob" in data:
+            if not data["mob"].get("alive", True):
+                map_manager.skeleton.alive = False
+                map_manager.skeleton.kill()
+
 
 # ── Boucle principale ─────────────────────────────────────────────────────────
 while True:
     choice = interface.run_main_menu()
 
     if choice == "solo":
-        pass  # à implémenter plus tard
+        map_manager = MapManager(screen_size)
+        p = Player(map_manager.spawn1.x, map_manager.spawn1.y, 130)
+        map_manager.add_sprite(p, layer=19)
+        map_manager.add_sprite(p.weapon, layer=18)
+
+        clock = pygame.time.Clock()
+        while True:
+            clock.tick(60)
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit();
+                    sys.exit()
+                if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
+                    break
+                if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                    p.weapon.hit()
+            else:
+                p.save_location()
+                map_manager.render(win, (p.position.x, p.position.y))
+                p.move(map_manager)
+
+                now = pygame.time.get_ticks()
+                map_manager.skeleton.update_ai(p.position, map_manager.collisions, now)
+                map_manager.skeleton.update()
+
+                # Détection de coup
+                if p.weapon.hitbox and map_manager.skeleton.alive:
+                    if p.weapon.hitbox.colliderect(map_manager.skeleton.rect):
+                        map_manager.skeleton.take_damage(1)
+
+
+                pygame.display.update()
+                continue
+            break
 
     elif choice == "multi":
         action = interface.run_multi_menu()

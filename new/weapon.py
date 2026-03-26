@@ -33,6 +33,11 @@ class Weapon(animation.AnimateSprite):
 
     def update(self):
         self.animate_hit()
+        # Hitbox active seulement pendant l'animation
+        if self.animation:
+            self.hitbox = self.rect.inflate(-10, -10)
+        else:
+            self.hitbox = None
 
     def rotate(self, player_world_pos, map_manager):
         mouse_x, mouse_y = pygame.mouse.get_pos()
