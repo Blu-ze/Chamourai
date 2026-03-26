@@ -64,6 +64,21 @@ class Interface:
         except:
             self.background = None
 
+        try:
+            self.logo = pygame.image.load(asset_path("assets/titre.png")).convert_alpha()
+            original_width, original_height = self.logo.get_size()
+
+            scale_factor = 0.35  # 1.5 = +50% plus grand
+
+            new_size = (
+                int(original_width * scale_factor),
+                int(original_height * scale_factor)
+            )
+
+            self.logo = pygame.transform.smoothscale(self.logo, new_size)
+        except:
+            self.logo = None
+
         bw, bh  = 300, 60
         spacing = 20
         start_y = H // 2 - 60
@@ -110,7 +125,11 @@ class Interface:
 
             mouse = pygame.mouse.get_pos()
             self._draw_bg()
-            self._draw_text("Chamouraï", self.font_title, (255,255,255), (W//2, H//2 - 220))
+            if self.logo:
+                rect = self.logo.get_rect(center=(W // 2, H // 2 - 190))
+                self.screen.blit(self.logo, rect)
+            else:
+                self._draw_text("Chamouraï", self.font_title, (255, 255, 255), (W // 2, H // 2 - 220))
 
             for btn in self.main_buttons:
                 btn.check_hover(mouse)

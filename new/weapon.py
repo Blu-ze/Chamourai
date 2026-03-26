@@ -46,7 +46,6 @@ class Weapon(animation.AnimateSprite):
         dx = mouse_x - player_screen_x
         dy = mouse_y - player_screen_y
 
-        # Direction déterminée par la position de la souris
         new_direction = 'right' if dx >= 0 else 'left'
         self.direction = new_direction
 
@@ -62,7 +61,6 @@ class Weapon(animation.AnimateSprite):
 
         rotated_offset = self.handle_offset.rotate(-self.angle + 90)
 
-        # rect en coordonnées monde pour pyscroll
         self.rect = self.image.get_rect(
             center=(
                 self.position[0] - rotated_offset.x,
