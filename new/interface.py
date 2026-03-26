@@ -160,6 +160,8 @@ class Interface:
 
         clock = pygame.time.Clock()
         W, H = self.screen_size
+        import socket
+        local_ip = socket.gethostbyname(socket.gethostname())
         result = network.create_salon()
 
         if result.get("status") != "ok":
@@ -196,6 +198,7 @@ class Interface:
             self._draw_bg()
             self._draw_text("Votre code de salon", self.font_normal, (200, 200, 200), (W // 2, H // 2 - 100))
             self._draw_text(code, self.font_code, (255, 220, 50), (W // 2, H // 2))
+            self._draw_text(f"Votre IP : {local_ip}", self.font_small, (180, 255, 180), (W // 2, H // 2 + 35))
 
             if guest_ready[0]:
                 self._draw_text("Joueur 2 connecté !", self.font_normal, (100, 255, 100), (W // 2, H // 2 + 70))
@@ -294,3 +297,43 @@ class Interface:
             pygame.display.flip()
 
         return result[0]
+
+    def run_enter_ip(self):
+        clock = pygame.time.Clock()
+        W, H = self.screen_size
+        ip_text = ""
+        confirm = Button("Confirmer", W // 2 - 150, H // 2 + 100, 300, 55, (70, 130, 240), (90, 150, 255))
+        error = ""
+
+        while True:
+            clicked = False
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit();
+                    sys.exit()
+                if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                    clicked = True
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_BACKSPACE:
+                        ip_text = ip_text[:-1]
+                    elif len(ip_text) < 15 and (event.unicode.isdigit() or event.unicode == '.'):
+                        ip_text += event.unicode
+
+            mouse = pygame.mouse.get_pos()
+            self._draw_bg()
+            self._draw_text("IP du serveur (hôte)", self.font_normal, (255, 255, 255), (W // 2, H // 2 - 80))
+            ip_surf = self.font_code.render(ip_text or "_", True, (255, 220, 50))
+            self.screen.blit(ip_surf, ip_surf.get_rect(center=(W // 2, H // 2)))
+            confirm.check_hover(mouse)
+            confirm.draw(self.screen)
+            if error:
+                self._draw_text(error, self.font_small, (255, 80, 80), (W // 2, H // 2 + 180))
+            if confirm.is_clicked(mouse, clicked):
+                parts = ip_text.split('.')
+                if len(parts) == 4 and all(p.isdigit() and 0 <= int(p) <= 255 for p in parts):
+                    return ip_text
+                else:
+                    error = "IP invalide (ex: 192.168.1.10)"
+
+            pygame.display.flip()
+            clock.tick(60)

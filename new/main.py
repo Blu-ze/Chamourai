@@ -88,9 +88,12 @@ while True:
 
 
 
+
         elif action == "join":
 
-            network = Network()
+            server_ip = interface.run_enter_ip()
+
+            network = Network(server_ip=server_ip)
 
             result = interface.run_join_salon(network)
 
