@@ -1,29 +1,48 @@
 import socket
 import pickle
 
+def get_local_ip():
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.connect(("8.8.8.8", 80))
+        ip = s.getsockname()[0]
+        s.close()
+        return ip
+    except Exception:
+        return "127.0.0.1"
 
 class Network:
-    def __init__(self):
+    def __init__(self, server_ip=None):
         self.client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.server = "192.168.1.30"
-        self.port = 5555
-        self.addr = (self.server, self.port)
-        self.p = self.connect()
+        self.server = server_ip if server_ip else get_local_ip()
+        self.port   = 5555
+        self.client.connect((self.server, self.port))
 
-    def getP(self):
-        return self.p
+    def send_raw(self, data):
+        self.client.sendall(pickle.dumps(data))
 
-    def connect(self):
-        try:
-            self.client.connect(self.addr)
-            return pickle.loads(self.client.recv(2048))
+    def recv_raw(self):
+        return pickle.loads(self.client.recv(4096))
 
-        except:
-            pass
+    def create_salon(self):
+        self.send_raw("CREATE")
+        return self.recv_raw()
+
+    def join_salon(self, code):
+        self.send_raw({"type": "JOIN", "code": code})
+        return self.recv_raw()
+
+    def ping(self):
+        self.send_raw("PING")
+        return self.recv_raw()
+
+    def start_game(self):
+        self.send_raw("START")
+        return self.recv_raw()
 
     def send(self, data):
         try:
-            self.client.send(pickle.dumps(data))
-            return pickle.loads(self.client.recv(2048))
+            self.client.sendall(pickle.dumps(data))
+            return pickle.loads(self.client.recv(4096))
         except socket.error as e:
             print(e)

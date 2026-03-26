@@ -124,9 +124,12 @@ animations = {
         'player/idle', [64, 128], [64, 64], scale=1
     ),
     'katana': load_animation_images(
-        'katana/spritesheet', [1250, 160], [125, 80], scale=0.9
+        'katana/spritesheet', [1250, 160], [125, 80], scale=1
     ),
     'skeleton_idle': load_animation_images(
-        'mobs/Skeleton/SkeletonIdle', [364, 32], [24, 32], scale=2
-    )
+        'mobs/Skeleton/SkeletonIdle', [264, 32], [24, 32], scale=2
+    ),
+    'skeleton_walk': load_animation_images(
+        'mobs/Skeleton/SkeletonWalk', [286, 33], [22, 33], scale=2
+    ),
 }
