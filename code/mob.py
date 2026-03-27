@@ -2,40 +2,39 @@ import pygame
 import animation
 from pathfinding import astar, build_collision_set
 
-# ─── Constantes IA ─────────────────────────────────────────────────────────────
-DETECTION_RADIUS   = 400
-ATTACK_RADIUS      = 40
-PATHFIND_INTERVAL  = 500
+DETECTION_RADIUS  = 400
+ATTACK_RADIUS     = 40
+PATHFIND_INTERVAL = 500
 WAYPOINT_THRESHOLD = 16
-# ───────────────────────────────────────────────────────────────────────────────
-
+MAX_HP = 150
+HIT_FLASH_DURATION = 200  # ms
 
 class Mob(animation.AnimateSprite):
 
     def __init__(self, name, x, y, animation_speed):
-        super().__init__(name, animation_speed, False)
+        super().__init__(name, animation_speed)
         self.position    = pygame.math.Vector2(x, y)
         self.rect.center = self.position
         self.speed       = 2.0
-
-        self.feet = pygame.Rect(0, 0, max(1, self.rect.width  * 0.5), 12)
-
-        self.state             = 'idle'
-        self.path              = []
+        self.feet        = pygame.Rect(0, 0, max(1, self.rect.width * 0.5), 12)
+        self.state       = 'idle'
+        self.path        = []
         self.blocked_cells     = set()
         self._last_pathfind_ms = 0
         self.old_position      = self.position.copy()
-
-        self._frame_index   = 0
-        self._last_frame_ms = pygame.time.get_ticks()
-
-    # ──────────────────────────────────────────────────────────────────────────
+        self._frame_index      = 0
+        self._last_frame_ms    = pygame.time.get_ticks()
+        self.hp = MAX_HP
+        self.hit_flash_until = 0
+        self.alive = True
+        self.is_hit = False
+        self.hit_anim_index = 0
+        self.hit_anim_until = 0
 
     def init_pathfinding(self, collisions):
         self.blocked_cells = build_collision_set(collisions)
 
     def update_ai(self, player_position, collisions, now_ms):
-        # Garde-fou : position invalide
         try:
             dist = self.position.distance_to(player_position)
         except Exception:
@@ -54,12 +53,9 @@ class Mob(animation.AnimateSprite):
         elif self.state == 'attack':
             self.path = []
             dx = player_position.x - self.position.x
-            self.change_direction('left' if dx < 0 else 'right')
-
-    # ──────────────────────────────────────────────────────────────────────────
+            self.set_direction('left' if dx < 0 else 'right')
 
     def _chase(self, player_position, collisions, now_ms):
-        # Recalcul périodique du chemin
         if now_ms - self._last_pathfind_ms > PATHFIND_INTERVAL or not self.path:
             self._last_pathfind_ms = now_ms
             try:
@@ -75,11 +71,9 @@ class Mob(animation.AnimateSprite):
         if not self.path:
             return
 
-        # Waypoint courant
         target        = pygame.math.Vector2(self.path[0])
         direction_vec = target - self.position
 
-        # Waypoint atteint → passer au suivant
         if direction_vec.length() < WAYPOINT_THRESHOLD:
             self.path.pop(0)
             if not self.path:
@@ -87,7 +81,6 @@ class Mob(animation.AnimateSprite):
             target        = pygame.math.Vector2(self.path[0])
             direction_vec = target - self.position
 
-        # Normalisation sécurisée (évite ZeroDivisionError)
         length = direction_vec.length()
         if length == 0:
             return
@@ -95,7 +88,6 @@ class Mob(animation.AnimateSprite):
 
         self.old_position = self.position.copy()
 
-        # Déplacement X avec collision
         self.position.x += direction_vec.x * self.speed
         self.rect.center    = self.position
         self.feet.midbottom = self.rect.midbottom
@@ -104,7 +96,6 @@ class Mob(animation.AnimateSprite):
             self.rect.center    = self.position
             self.feet.midbottom = self.rect.midbottom
 
-        # Déplacement Y avec collision
         self.position.y += direction_vec.y * self.speed
         self.rect.center    = self.position
         self.feet.midbottom = self.rect.midbottom
@@ -113,42 +104,52 @@ class Mob(animation.AnimateSprite):
             self.rect.center    = self.position
             self.feet.midbottom = self.rect.midbottom
 
-        # Direction pour le flip
         if direction_vec.x < -0.1:
-            self.change_direction('left')
+            self.set_direction('left')
         elif direction_vec.x > 0.1:
-            self.change_direction('right')
-
-    # ──────────────────────────────────────────────────────────────────────────
+            self.set_direction('right')
 
     def update(self):
-        self.rect.center    = self.position
+        self.rect.center = self.position
         self.feet.midbottom = self.rect.midbottom
 
-        if self.state in ('idle', 'attack'):
+        now = pygame.time.get_ticks()
+
+        if self.is_hit:
+            self._animate_frames('skeleton_hit')
+            if now > self.hit_anim_until:
+                self.is_hit = False
+        elif self.state in ('idle', 'attack'):
             self._animate_frames('skeleton_idle')
         else:
             self._animate_frames('skeleton_walk')
 
-    # ──────────────────────────────────────────────────────────────────────────
-
     def _animate_frames(self, anim_key):
         frames = animation.animations.get(anim_key)
-        # Garde-fou : animation manquante ou vide
         if not frames:
-            return
+            return  # garde l'image précédente, ne la remet pas à None
 
         now = pygame.time.get_ticks()
         if now - self._last_frame_ms > self.animation_speed:
             self._last_frame_ms = now
-            self._frame_index   = (self._frame_index + 1) % len(frames)
+            self._frame_index = (self._frame_index + 1) % len(frames)
 
-        # Clamp de sécurité pour éviter l'IndexError
         self._frame_index = self._frame_index % len(frames)
         raw_frame = frames[self._frame_index]
 
-        # Flip horizontal si le mob va à gauche
         if self.direction == 'left':
             self.image = pygame.transform.flip(raw_frame, True, False)
         else:
             self.image = raw_frame
+
+    def take_damage(self, amount=1):
+        if not self.alive:
+            return
+        self.hp -= amount
+        self.is_hit = True
+        self.hit_anim_until = pygame.time.get_ticks() + HIT_FLASH_DURATION
+        self._frame_index = 0
+        if self.hp <= 0:
+            self.hp = 0
+            self.alive = False
+            self.kill()  # retire le sprite du groupe pyscroll
