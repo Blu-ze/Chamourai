@@ -1,6 +1,6 @@
 Comment lancer le jeu la première fois :
 
-- Prérequis nécessaire : Avoir Python installé sur son ordinateur (version récente de préférence)
+- Prérequis nécessaire : Avoir Python installé sur son ordinateur (version 3.16)
 	Téléchargeable via : https://www.python.org/
 
 - Ouvrir un terminal windows et aller dans la racine du dépot git ("Chamourai/")
