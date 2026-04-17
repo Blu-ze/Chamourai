@@ -1186,7 +1186,7 @@
   <object id="272" name="collision" type="collision" x="3136" y="1836.67" width="74" height="19.3333"/>
   <object id="274" name="collision" type="collision" x="385" y="1465" width="64" height="64"/>
   <object id="275" name="collision" type="collision" x="733.5" y="1323.5" width="194" height="141"/>
-  <object id="277" name="collision" type="collision" x="642.5" y="1429.5" width="263" height="141"/>
+  <object id="277" name="collision" type="collision" x="666.5" y="1459.5" width="267" height="133"/>
   <object id="278" name="collision" type="collision" x="2239.03" y="767.938" width="74.5978" height="36.125"/>
   <object id="279" name="collision" type="collision" x="2290.7" y="733.938" width="74.5978" height="36.125"/>
   <object id="280" name="collision" type="collision" x="1487.53" y="1656.94" width="74.5978" height="36.125"/>
