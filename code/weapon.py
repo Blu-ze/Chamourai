@@ -11,8 +11,8 @@ class Weapon(animation.AnimateSprite):
         self.original_image_right = self.images[0]
         self.original_image_left = self.images[len(self.images) // 2]
 
-        handle_x = 57
-        handle_y = 67
+        handle_x = 60
+        handle_y = 68
 
         w, h = self.original_image_right.get_size()
         image_center = pygame.math.Vector2(w / 2, h / 2)
