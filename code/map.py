@@ -14,7 +14,8 @@ class MapManager:
     def __init__(self, screen_size):
         self.tmx_data = pytmx.util_pygame.load_pygame(map_path('map/spawn.tmx'))
 
-        self.spawn     = self.tmx_data.get_object_by_name("PlayerSpawn")
+        self.spawn1    = self.tmx_data.get_object_by_name("Player1Spawn")
+        self.spawn2    = self.tmx_data.get_object_by_name("Player2Spawn")
         self.mob_spawn = self.tmx_data.get_object_by_name("MobSpawn")
 
         self.map_layer = pyscroll.BufferedRenderer(
@@ -28,30 +29,24 @@ class MapManager:
             default_layer=0
         )
 
-        # ─── Collisions ───────────────────────────────────────────────────────
         self.collisions = []
         for obj in self.tmx_data.objects:
             if obj.type == "collision":
                 self.collisions.append(pygame.Rect(obj.x, obj.y, obj.width, obj.height))
 
-        # ─── Ennemis ──────────────────────────────────────────────────────────
-        self.mobs = []
-        self._spawn_mob('skeleton', self.mob_spawn.x, self.mob_spawn.y, 100)
-
-    def _spawn_mob(self, name, x, y, anim_speed):
-        """Crée un mob, initialise son pathfinding et l'ajoute au groupe de rendu."""
-        mob = Mob(name, x, y, anim_speed)
-        mob.init_pathfinding(self.collisions)   # pré-calcule les cellules bloquées (A*)
-        self.mobs.append(mob)
-        self.group.add(mob, layer=18)
+        # Mob affiché côté client (pas d'IA, juste le rendu)
+        self.skeleton = Mob('skeleton', self.mob_spawn.x, self.mob_spawn.y, 100)
+        self.group.add(self.skeleton, layer=18)
 
     def render(self, surface, center):
         self.group.center(center)
         self.group.draw(surface)
 
     def world_to_screen(self, world_pos):
-        """Convertit des coordonnées monde en coordonnées écran."""
         offset_x, offset_y = self.map_layer.get_center_offset()
         screen_x = (world_pos[0] + offset_x) * self.map_layer.zoom
         screen_y = (world_pos[1] + offset_y) * self.map_layer.zoom
         return screen_x, screen_y
+
+    def add_sprite(self, sprite, layer=19):
+        self.group.add(sprite, layer=layer)

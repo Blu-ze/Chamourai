@@ -1,8 +1,10 @@
 import pygame
 import sys
 import os
+
 import random
 import math
+
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -90,6 +92,7 @@ class Particle:
 
         # Blit la particule
         surface.blit(s, (int(self.x) - size // 2, int(self.y) - size // 2))
+
 
 class Button:
     def __init__(self, text, x, y, width, height, color, hover_color, font_size=32):
@@ -191,10 +194,12 @@ class Interface:
         else:
             self.screen.fill((30, 30, 50))
 
+
         # Dessin des particules étoiles
         for p in self.particles:
             p.update()
             p.draw(self.screen)
+
 
     def _draw_text(self, text, font, color, center):
         surf = font.render(text, True, color)
