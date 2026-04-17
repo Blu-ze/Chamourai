@@ -144,6 +144,7 @@ class Interface:
         self.screen      = screen
         W, H             = screen_size
 
+        self.particles = []
         for _ in range(80):
             p = Particle(screen_size)
             self.particles.append(p)
