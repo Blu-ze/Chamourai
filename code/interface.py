@@ -144,6 +144,10 @@ class Interface:
         self.screen      = screen
         W, H             = screen_size
 
+        for _ in range(80):
+            p = Particle(screen_size)
+            self.particles.append(p)
+
         try:
             self.background = pygame.image.load(asset_path('assets/Chamourai.png')).convert()
             self.background = pygame.transform.scale(self.background, screen_size)
