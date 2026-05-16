@@ -17,11 +17,8 @@ interface   = Interface(screen_size, win)
 def run_game(network, spawn_data, player_index=0):
     map_manager = MapManager(screen_size)
 
-    my_skin = 'player2' if player_index == 1 else 'player'
-    other_skin = 'player' if player_index == 1 else 'player2'
-
-    p = Player(spawn_data["x"], spawn_data["y"], 130, skin=my_skin)
-    p2 = Player(0, 0, 130, skin=other_skin)
+    p  = Player(spawn_data["x"], spawn_data["y"], 130)
+    p2 = Player(0, 0, 130, skin="player2")
 
     map_manager.add_sprite(p,        layer=19)
     map_manager.add_sprite(p2,       layer=19)
