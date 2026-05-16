@@ -2,12 +2,13 @@ import pygame
 import animation
 from pathfinding import astar, build_collision_set
 
-DETECTION_RADIUS  = 400
-ATTACK_RADIUS     = 40
-PATHFIND_INTERVAL = 500
+DETECTION_RADIUS   = 400
+ATTACK_RADIUS      = 40
+PATHFIND_INTERVAL  = 500
 WAYPOINT_THRESHOLD = 16
-MAX_HP = 150
+MAX_HP             = 150
 HIT_FLASH_DURATION = 200  # ms
+ATTACK_HIT_FRAME   = 7    # index de la frame qui inflige les dégâts
 
 class Mob(animation.AnimateSprite):
 
@@ -24,17 +25,27 @@ class Mob(animation.AnimateSprite):
         self.old_position      = self.position.copy()
         self._frame_index      = 0
         self._last_frame_ms    = pygame.time.get_ticks()
-        self.hp = MAX_HP
-        self.hit_flash_until = 0
-        self.alive = True
-        self.is_hit = False
-        self.hit_anim_index = 0
+
+        self.hp    = MAX_HP
+        self.alive = True          # encore en vie (peut agir)
+        self.dead  = False         # animation de mort en cours / terminée
+
+        self.is_hit         = False
         self.hit_anim_until = 0
+
+        self._prev_state      = 'idle'  # pour détecter les transitions d'état
+        self._attack_hit_done = False   # True après avoir infligé les dégâts de ce cycle
+
+    # ── Pathfinding ────────────────────────────────────────────────────────────
 
     def init_pathfinding(self, collisions):
         self.blocked_cells = build_collision_set(collisions)
 
+    # ── IA ─────────────────────────────────────────────────────────────────────
+
     def update_ai(self, player_position, collisions, now_ms):
+        if not self.alive:
+            return
         try:
             dist = self.position.distance_to(player_position)
         except Exception:
@@ -109,47 +120,110 @@ class Mob(animation.AnimateSprite):
         elif direction_vec.x > 0.1:
             self.set_direction('right')
 
+    # ── Update principal ───────────────────────────────────────────────────────
+
     def update(self):
-        self.rect.center = self.position
+        self.rect.center    = self.position
         self.feet.midbottom = self.rect.midbottom
 
         now = pygame.time.get_ticks()
 
+        # 1. Animation de mort : priorité absolue, non interruptible
+        if self.dead:
+            finished = self._animate_once('skeleton_dead')
+            if finished:
+                self.kill()   # retire le sprite du groupe seulement ici
+            return
+
+        # 2. Animation de hit : priorité haute mais courte
         if self.is_hit:
             self._animate_frames('skeleton_hit')
             if now > self.hit_anim_until:
                 self.is_hit = False
-        elif self.state in ('idle', 'attack'):
-            self._animate_frames('skeleton_idle')
-        else:
+                self._frame_index = 0
+            return
+
+        # 3. Attaque : joue skeleton_attack depuis le début à chaque entrée dans l'état
+        if self.state == 'attack':
+            if self._prev_state != 'attack':
+                self._frame_index    = 0
+                self._last_frame_ms  = now
+                self._attack_hit_done = False
+            self._prev_state = 'attack'
+            self._animate_frames('skeleton_attack')
+            return
+
+        self._prev_state = self.state
+
+        # 4. Déplacement / idle
+        if self.state == 'chase':
             self._animate_frames('skeleton_walk')
+        else:
+            self._animate_frames('skeleton_idle')
+
+    @property
+    def is_attack_hit_frame(self):
+        """True uniquement sur la frame de coup de l'attaque, une seule fois par cycle."""
+        if self.state != 'attack' or self._attack_hit_done:
+            return False
+        if self._frame_index == ATTACK_HIT_FRAME:
+            self._attack_hit_done = True   # consommé pour ce cycle
+            return True
+        return False
+
+    # ── Helpers d'animation ────────────────────────────────────────────────────
 
     def _animate_frames(self, anim_key):
+        """Joue une animation en boucle infinie."""
         frames = animation.animations.get(anim_key)
         if not frames:
-            return  # garde l'image précédente, ne la remet pas à None
+            return
 
         now = pygame.time.get_ticks()
         if now - self._last_frame_ms > self.animation_speed:
             self._last_frame_ms = now
-            self._frame_index = (self._frame_index + 1) % len(frames)
+            self._frame_index   = (self._frame_index + 1) % len(frames)
 
         self._frame_index = self._frame_index % len(frames)
         raw_frame = frames[self._frame_index]
 
-        if self.direction == 'left':
-            self.image = pygame.transform.flip(raw_frame, True, False)
-        else:
-            self.image = raw_frame
+        self.image = (pygame.transform.flip(raw_frame, True, False)
+                      if self.direction == 'left' else raw_frame)
+
+    def _animate_once(self, anim_key):
+        """Joue une animation une seule fois. Retourne True quand elle est terminée."""
+        frames = animation.animations.get(anim_key)
+        if not frames:
+            return True   # pas de frames → on considère l'anim terminée
+
+        now = pygame.time.get_ticks()
+        if now - self._last_frame_ms > self.animation_speed:
+            self._last_frame_ms = now
+            self._frame_index  += 1
+
+        # Clamp pour ne pas dépasser
+        clamped = min(self._frame_index, len(frames) - 1)
+        raw_frame = frames[clamped]
+        self.image = (pygame.transform.flip(raw_frame, True, False)
+                      if self.direction == 'left' else raw_frame)
+
+        # Terminé quand on a dépassé la dernière frame
+        return self._frame_index >= len(frames)
+
+    # ── Dégâts / mort ──────────────────────────────────────────────────────────
 
     def take_damage(self, amount=1):
         if not self.alive:
             return
         self.hp -= amount
-        self.is_hit = True
-        self.hit_anim_until = pygame.time.get_ticks() + HIT_FLASH_DURATION
-        self._frame_index = 0
         if self.hp <= 0:
-            self.hp = 0
+            self.hp    = 0
             self.alive = False
-            self.kill()  # retire le sprite du groupe pyscroll
+            self.dead  = True
+            # Réinitialise l'index pour jouer skeleton_dead depuis le début
+            self._frame_index   = 0
+            self._last_frame_ms = pygame.time.get_ticks()
+        else:
+            self.is_hit        = True
+            self.hit_anim_until = pygame.time.get_ticks() + HIT_FLASH_DURATION
+            self._frame_index   = 0
