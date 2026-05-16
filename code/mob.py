@@ -182,7 +182,11 @@ class Mob(animation.AnimateSprite):
         now = pygame.time.get_ticks()
         if now - self._last_frame_ms > self.animation_speed:
             self._last_frame_ms = now
-            self._frame_index   = (self._frame_index + 1) % len(frames)
+            next_index = (self._frame_index + 1) % len(frames)
+            # Nouveau cycle d'attaque : on réarme le coup
+            if anim_key == 'skeleton_attack' and next_index == 0:
+                self._attack_hit_done = False
+            self._frame_index = next_index
 
         self._frame_index = self._frame_index % len(frames)
         raw_frame = frames[self._frame_index]
