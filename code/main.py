@@ -20,8 +20,8 @@ def run_game(network, spawn_data, player_index=0):
     my_skin = "player" if player_index == 0 else "player2"
     other_skin = "player2" if player_index == 0 else "player"
 
-    p  = Player(spawn_data["x"], spawn_data["y"], 130)
-    p2 = Player(0, 0, 130, skin="player2")
+    p  = Player(spawn_data["x"], spawn_data["y"], 130, skin=my_skin)
+    p2 = Player(0, 0, 130, skin=other_skin)
 
     map_manager.add_sprite(p,        layer=19)
     map_manager.add_sprite(p2,       layer=19)
