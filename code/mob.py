@@ -9,6 +9,8 @@ WAYPOINT_THRESHOLD = 16
 MAX_HP             = 150
 HIT_FLASH_DURATION = 200  # ms
 ATTACK_HIT_FRAME   = 7    # index de la frame qui inflige les dégâts
+ATTACK_LEFT_OFFSET = -30   # décalage horizontal (px) du rect quand attaque vers la gauche
+ATTACK_LEFT_OFFSET_Y = -10  # décalage vertical (px) du rect quand attaque vers la gauche
 
 class Mob(animation.AnimateSprite):
 
@@ -123,9 +125,6 @@ class Mob(animation.AnimateSprite):
     # ── Update principal ───────────────────────────────────────────────────────
 
     def update(self):
-        self.rect.center    = self.position
-        self.feet.midbottom = self.rect.midbottom
-
         now = pygame.time.get_ticks()
 
         # 1. Animation de mort : priorité absolue, non interruptible
@@ -133,6 +132,7 @@ class Mob(animation.AnimateSprite):
             finished = self._animate_once('skeleton_dead')
             if finished:
                 self.kill()   # retire le sprite du groupe seulement ici
+            self._position_rect()
             return
 
         # 2. Animation de hit : priorité haute mais courte
@@ -141,6 +141,7 @@ class Mob(animation.AnimateSprite):
             if now > self.hit_anim_until:
                 self.is_hit = False
                 self._frame_index = 0
+            self._position_rect()
             return
 
         # 3. Attaque : joue skeleton_attack depuis le début à chaque entrée dans l'état
@@ -151,6 +152,7 @@ class Mob(animation.AnimateSprite):
                 self._attack_hit_done = False
             self._prev_state = 'attack'
             self._animate_frames('skeleton_attack')
+            self._position_rect(attacking=True)
             return
 
         self._prev_state = self.state
@@ -160,6 +162,7 @@ class Mob(animation.AnimateSprite):
             self._animate_frames('skeleton_walk')
         else:
             self._animate_frames('skeleton_idle')
+        self._position_rect()
 
     @property
     def is_attack_hit_frame(self):
@@ -170,6 +173,22 @@ class Mob(animation.AnimateSprite):
             self._attack_hit_done = True   # consommé pour ce cycle
             return True
         return False
+
+    # ── Positionnement du rect ────────────────────────────────────────────────
+
+    def _position_rect(self, attacking=False):
+        """Ancre le rect à self.position.
+        Attaque vers la gauche : ancrage depuis le coin bas-droit de l'image
+        (le squelette occupe la partie droite du sprite, l'espace vide est à gauche).
+        Tous les autres cas : ancrage centre classique.
+        """
+        if attacking and self.direction == 'left':
+            self.rect.center = (self.position.x + ATTACK_LEFT_OFFSET, self.position.y + ATTACK_LEFT_OFFSET_Y)
+        elif attacking:
+            self.rect.center = (self.position.x, self.position.y + ATTACK_LEFT_OFFSET_Y)
+        else:
+            self.rect.center = self.position
+        self.feet.midbottom = self.rect.midbottom
 
     # ── Helpers d'animation ────────────────────────────────────────────────────
 
