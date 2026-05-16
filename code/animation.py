@@ -123,6 +123,18 @@ animations = {
     'player_idle': load_animation_images(
         'player/idle', [64, 128], [64, 64], scale=1
     ),
+    'player_jump': load_animation_images(
+        'player/jump', [320, 128], [64, 64], scale=1
+    ),
+    'player_walk2': load_animation_images(
+        'player/spritesheet2', [320, 128], [64, 64], scale=1
+    ),
+    'player_idle2': load_animation_images(
+        'player/idle2', [64, 128], [64, 64], scale=1
+    ),
+    'player_jump2': load_animation_images(
+        'player/jump2', [320, 128], [64, 64], scale=1
+    ),
     'katana': load_animation_images(
         'katana/spritesheet', [1250, 160], [125, 80], scale=1
     ),
