@@ -99,8 +99,8 @@ def threaded_client(conn):
                 salons[code] = {
                     "players":   [conn, None],
                     "states":    [
-                        {"x": spawn1.x, "y": spawn1.y, "dir": "right", "state": "idle"},
-                        {"x": spawn2.x, "y": spawn2.y, "dir": "right", "state": "idle"}
+                        {"x": spawn1.x, "y": spawn1.y, "dir": "right", "state": "idle",  "skin": "player"},
+                        {"x": spawn2.x, "y": spawn2.y, "dir": "right", "state": "idle",  "skin": "player2"}
                     ],
                     "started":   False,
                     "mob":       {"x": mob_spawn.x, "y": mob_spawn.y, "dir": "right", "state": "idle"},

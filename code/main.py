@@ -17,6 +17,9 @@ interface   = Interface(screen_size, win)
 def run_game(network, spawn_data, player_index=0):
     map_manager = MapManager(screen_size)
 
+    my_skin = "player" if player_index == 0 else "player2"
+    other_skin = "player2" if player_index == 0 else "player"
+
     p  = Player(spawn_data["x"], spawn_data["y"], 130)
     p2 = Player(0, 0, 130, skin="player2")
 
@@ -52,7 +55,8 @@ def run_game(network, spawn_data, player_index=0):
             "dir": p.direction,
             "state": p.state,
             "hit": p.weapon.animation,
-            "weapon_rect": weapon_rect
+            "weapon_rect": weapon_rect,
+            "skin": my_skin
         })
 
         if data and "player" in data:
