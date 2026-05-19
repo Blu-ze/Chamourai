@@ -92,7 +92,7 @@ def run_game(network, spawn_data, player_index=0):
             if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
                 return
             if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-                if p.alive:
+                if p.alive and not p.dodging:
                     p.weapon.hit()
 
         p.save_location()
@@ -176,7 +176,7 @@ while True:
                 if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
                     break
                 if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-                    if p.alive:
+                    if p.alive and not p.dodging:
                         p.weapon.hit()
             else:
                 p.save_location()
