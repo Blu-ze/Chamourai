@@ -118,7 +118,8 @@ while True:
                 pygame.display.update()
                 continue
             break
-
+    elif choice == "options":
+        interface.run_options()
     elif choice == "multi":
         action = interface.run_multi_menu()
 

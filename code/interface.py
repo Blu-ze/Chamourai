@@ -192,6 +192,16 @@ class Interface:
         self.font_normal = pygame.font.Font(None, 36)
         self.font_code   = pygame.font.Font(None, 100)
         self.font_small  = pygame.font.Font(None, 28)
+        self.volume = 0.5
+        pygame.mixer.music.set_volume(self.volume)
+
+        bw2, bh2 = 200, 55
+        cx2 = (W - bw2) // 2
+        self.options_buttons = [
+            Button("- Volume", cx2 - 110, H // 2, bw2, bh2, (70, 130, 240), (90, 150, 255)),
+            Button("+ Volume", cx2 + 110, H // 2, bw2, bh2, (70, 130, 240), (90, 150, 255)),
+            Button("Retour", cx2, H // 2 + 100, bw2, bh2, (120, 120, 120), (160, 160, 160)),
+        ]
 
     def _draw_bg(self):
         if self.background:
@@ -237,12 +247,12 @@ class Interface:
                         return "solo"
                     elif btn.text == "Multijoueur":
                         return "multi"
+                    if btn.text == "Options":
+                        return "options"
                     elif btn.text == "Quitter":
                         pygame.quit(); sys.exit()
-
             pygame.display.flip()
             clock.tick(60)
-
     def run_multi_menu(self):
         clock = pygame.time.Clock()
         W, H  = self.screen_size
@@ -451,6 +461,50 @@ class Interface:
                     return ip_text
                 else:
                     error = "IP invalide (ex: 192.168.1.10)"
+
+            pygame.display.flip()
+            clock.tick(60)
+
+    def run_options(self):
+        clock = pygame.time.Clock()
+        W, H = self.screen_size
+
+        while True:
+            clicked = False
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit();
+                    sys.exit()
+                if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                    clicked = True
+
+            mouse = pygame.mouse.get_pos()
+            self._draw_bg()
+            self._draw_text("Options", self.font_title, (255, 255, 255), (W // 2, H // 2 - 200))
+            self._draw_text(f"Volume : {int(self.volume * 100)} %", self.font_normal, (255, 220, 50),
+                            (W // 2, H // 2 - 80))
+
+            # Barre de volume visuelle
+            bar_w = 400
+            bar_h = 20
+            bar_x = W // 2 - bar_w // 2
+            bar_y = H // 2 - 30
+            pygame.draw.rect(self.screen, (80, 80, 80), (bar_x, bar_y, bar_w, bar_h), border_radius=8)
+            pygame.draw.rect(self.screen, (70, 180, 255), (bar_x, bar_y, int(bar_w * self.volume), bar_h),
+                             border_radius=8)
+
+            for btn in self.options_buttons:
+                btn.check_hover(mouse)
+                btn.draw(self.screen)
+                if btn.is_clicked(mouse, clicked):
+                    if btn.text == "+ Volume":
+                        self.volume = min(1.0, self.volume + 0.1)
+                        pygame.mixer.music.set_volume(self.volume)
+                    elif btn.text == "- Volume":
+                        self.volume = max(0.0, self.volume - 0.1)
+                        pygame.mixer.music.set_volume(self.volume)
+                    elif btn.text == "Retour":
+                        return
 
             pygame.display.flip()
             clock.tick(60)
