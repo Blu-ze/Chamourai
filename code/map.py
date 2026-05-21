@@ -22,7 +22,7 @@ class MapManager:
             pyscroll.data.TiledMapData(self.tmx_data),
             screen_size
         )
-        self.map_layer.zoom = 2.5
+        self.map_layer.zoom = 2
 
         self.group = pyscroll.PyscrollGroup(
             map_layer=self.map_layer,
