@@ -4,7 +4,8 @@ from network import Network
 from player import Player
 from map import MapManager
 from interface import Interface
-
+from player import MAX_HP
+from mob import ATTACK_RADIUS
 pygame.init()
 
 win           = pygame.display.set_mode((1280, 720))
@@ -13,6 +14,60 @@ pygame.display.set_caption("Chamouraï")
 screen_size = (1280, 720)
 interface   = Interface(screen_size, win)
 
+
+def draw_health_bar(surface, hp, max_hp):
+    """Dessine la barre de vie en bas à gauche."""
+    bar_x, bar_y   = 20, surface.get_height() - 40
+    bar_w, bar_h   = 220, 22
+    border_radius  = 6
+    padding        = 3
+
+    # Fond sombre (contour)
+    pygame.draw.rect(surface, (30, 30, 30),
+                     (bar_x - padding, bar_y - padding,
+                      bar_w + padding * 2, bar_h + padding * 2),
+                     border_radius=border_radius + 2)
+
+    # Fond rouge foncé (vide)
+    pygame.draw.rect(surface, (100, 20, 20),
+                     (bar_x, bar_y, bar_w, bar_h),
+                     border_radius=border_radius)
+
+    # Remplissage selon les PV
+    ratio = max(0, hp / max_hp)
+    fill_w = int(bar_w * ratio)
+    if fill_w > 0:
+        if ratio > 0.5:
+            r = int(255 * (1 - ratio) * 2)
+            g = 200
+        else:
+            r = 220
+            g = int(200 * ratio * 2)
+        pygame.draw.rect(surface, (r, g, 40),
+                         (bar_x, bar_y, fill_w, bar_h),
+                         border_radius=border_radius)
+
+    # Texte PV
+    font = pygame.font.Font(None, 26)
+    txt  = font.render(f"PV  {hp} / {max_hp}", True, (255, 255, 255))
+    surface.blit(txt, (bar_x + 6, bar_y + 3))
+
+
+def draw_death_screen(surface):
+    """Affiche le message de mort en semi-transparent."""
+    W, H = surface.get_size()
+    overlay = pygame.Surface((W, H), pygame.SRCALPHA)
+    overlay.fill((0, 0, 0, 140))
+    surface.blit(overlay, (0, 0))
+
+    font_big = pygame.font.Font(None, 100)
+    font_sub = pygame.font.Font(None, 40)
+
+    txt = font_big.render("Vous êtes mort.", True, (220, 50, 50))
+    sub = font_sub.render("Appuyez sur Échap pour revenir au menu", True, (200, 200, 200))
+
+    surface.blit(txt, txt.get_rect(center=(W // 2, H // 2 - 30)))
+    surface.blit(sub, sub.get_rect(center=(W // 2, H // 2 + 55)))
 
 def run_game(network, spawn_data, player_index=0):
     map_manager = MapManager(screen_size)
@@ -74,6 +129,10 @@ def run_game(network, spawn_data, player_index=0):
             mob.update()
 
         p2.update_animation()
+        draw_health_bar(win, p.hp, MAX_HP)
+
+        if not p.alive:
+            draw_death_screen(win)
         pygame.display.update()
 
         # Affichage PV du mob
@@ -112,13 +171,20 @@ while True:
                 now = pygame.time.get_ticks()
                 map_manager.skeleton.update_ai(p.position, map_manager.collisions, now)
                 map_manager.skeleton.update()
+                # Coup du mob sur le joueur (solo) : seulement sur la frame de coup
+                if p.alive and map_manager.skeleton.is_attack_hit_frame :
+                    if map_manager.skeleton.position.distance_to(p.position) <= ATTACK_RADIUS:
+                        p.take_damage(1)
 
                 # Détection de coup
                 if p.weapon.hitbox and map_manager.skeleton.alive:
                     if p.weapon.hitbox.colliderect(map_manager.skeleton.rect):
                         map_manager.skeleton.take_damage(1)
 
+                draw_health_bar(win, p.hp, MAX_HP)
 
+                if not p.alive:
+                    draw_death_screen(win)
                 pygame.display.update()
                 continue
             break
