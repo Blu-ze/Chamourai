@@ -3,8 +3,9 @@ import animation
 from weapon import Weapon
 
 MAX_HP         = 100
-DODGE_SPEED    = 6    # vitesse de déplacement pendant l'esquive
-DODGE_COOLDOWN = 2000  # ms avant de pouvoir esquiver à nouveau
+DODGE_SPEED    = 8    # vitesse de déplacement pendant l'esquive
+DODGE_COOLDOWN = 1000  # ms avant de pouvoir esquiver à nouveau
+DODGE_ANIMATION_SPEED = 60  # ms entre chaque frame de l'esquive
 
 class Player(animation.AnimateSprite):
     def __init__(self, x, y, animation_speed, skin='player'):
@@ -155,7 +156,7 @@ class Player(animation.AnimateSprite):
             self.position.x -= self._dodge_dir * DODGE_SPEED  # annule si collision
 
         # Avance l'animation
-        if now - self._dodge_last_ms > self.animation_speed:
+        if now - self._dodge_last_ms > DODGE_ANIMATION_SPEED:
             self._dodge_last_ms = now
             self._dodge_frame  += 1
 
