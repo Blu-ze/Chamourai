@@ -6,7 +6,7 @@ import pygame
 import os
 import threading
 import random
-from mob import Mob, ATTACK_RADIUS
+from mob import Mob
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -41,10 +41,15 @@ s.listen(10)
 print("Serveur démarré, en attente de connexions...")
 
 # ── Salons ────────────────────────────────────────────────────────────────────
+# salons[code] = {
+#   "players": [conn_host, conn_guest],
+#   "states":  [dict_host, dict_guest],
+#   "started": False,
+#   "mob":     dict_mob,
+#   "skeleton": Mob,
+# }
 salons = {}
 salons_lock = threading.Lock()
-
-MOB_ATTACK_DAMAGE = 1
 
 def generate_code():
     while True:
@@ -76,22 +81,13 @@ def mob_loop(code):
         skeleton.update()
 
         with salons_lock:
-            if code not in salons:
-                break
-
-            # Attaque du mob : seulement sur la frame de coup, une fois par cycle
-            if skeleton.alive and skeleton.is_attack_hit_frame:
-                for i, pos in enumerate(positions):
-                    if (skeleton.position.distance_to(pos) <= ATTACK_RADIUS
-                            and states[i].get("alive", True)):
-                        salons[code]["player_damage"][i] += MOB_ATTACK_DAMAGE
-
-            salons[code]["mob"] = {
-                "x":     skeleton.position.x,
-                "y":     skeleton.position.y,
-                "dir":   skeleton.direction,
-                "state": skeleton.state
-            }
+            if code in salons:
+                salons[code]["mob"] = {
+                    "x":     skeleton.position.x,
+                    "y":     skeleton.position.y,
+                    "dir":   skeleton.direction,
+                    "state": skeleton.state
+                }
 
 def threaded_client(conn):
     try:
@@ -101,16 +97,15 @@ def threaded_client(conn):
             with salons_lock:
                 code = generate_code()
                 salons[code] = {
-                    "players":       [conn, None],
-                    "states":        [
-                        {"x": spawn1.x, "y": spawn1.y, "dir": "right", "state": "idle", "alive": True},
-                        {"x": spawn2.x, "y": spawn2.y, "dir": "right", "state": "idle", "alive": True}
+                    "players":   [conn, None],
+                    "states":    [
+                        {"x": spawn1.x, "y": spawn1.y, "dir": "right", "state": "idle",  "skin": "player"},
+                        {"x": spawn2.x, "y": spawn2.y, "dir": "right", "state": "idle",  "skin": "player2"}
                     ],
-                    "started":       False,
-                    "mob":           {"x": mob_spawn.x, "y": mob_spawn.y, "dir": "right", "state": "idle"},
-                    "skeleton":      None,
-                    "host_conn":     conn,
-                    "player_damage": [0, 0],   # dégâts accumulés à envoyer
+                    "started":   False,
+                    "mob":       {"x": mob_spawn.x, "y": mob_spawn.y, "dir": "right", "state": "idle"},
+                    "skeleton":  None,
+                    "host_conn": conn
                 }
             conn.sendall(pickle.dumps({"status": "ok", "code": code, "player": 0}))
             print(f"Salon {code} créé")
@@ -137,6 +132,7 @@ def threaded_client(conn):
                             salons[code]["skeleton"] = sk
                             guest_conn = salons[code]["players"][1]
 
+                        # Envoyer spawn aux deux joueurs
                         guest_conn.sendall(pickle.dumps({
                             "status": "start",
                             "spawn":  salons[code]["states"][1]
@@ -170,10 +166,14 @@ def threaded_client(conn):
             conn.sendall(pickle.dumps({"status": "ok", "player": 1}))
             print(f"Joueur 2 rejoint le salon {code}")
 
+            # Attendre le START (envoyé directement par le thread hôte)
             start_msg = pickle.loads(conn.recv(2048))
+            # Renvoyer confirmation
             conn.sendall(pickle.dumps({"status": "ready"}))
 
             player_index = 1
+            # start_msg contient déjà {"status": "start", "spawn": {...}}
+            # Le spawn a déjà été envoyé, on entre directement en boucle de jeu
 
         else:
             return
@@ -189,14 +189,10 @@ def threaded_client(conn):
                     break
                 salons[code]["states"][player_index] = data
                 other = salons[code]["states"][1 - player_index]
-                mob   = salons[code]["mob"]
+                mob = salons[code]["mob"]
                 skeleton = salons[code]["skeleton"]
 
-                # Dégâts reçus par CE joueur depuis le mob (accumulés dans mob_loop)
-                dmg = salons[code]["player_damage"][player_index]
-                salons[code]["player_damage"][player_index] = 0  # reset après envoi
-
-                # Coup de l'arme du joueur sur le mob
+                # Détection de coup : le joueur envoie "hit" = True
                 if data.get("hit") and skeleton and skeleton.alive:
                     mob_rect = pygame.Rect(mob["x"] - 20, mob["y"] - 20, 40, 40)
                     weapon_rect = data.get("weapon_rect")
@@ -204,14 +200,10 @@ def threaded_client(conn):
                         wr = pygame.Rect(weapon_rect)
                         if wr.colliderect(mob_rect):
                             skeleton.take_damage(1)
-                            mob["hp"]    = skeleton.hp
+                            mob["hp"] = skeleton.hp
                             mob["alive"] = skeleton.alive
 
-            reply = {
-                "player":     other,
-                "mob":        mob,
-                "player_dmg": dmg,   # dégâts à appliquer côté client
-            }
+            reply = {"player": other, "mob": mob}
             conn.sendall(pickle.dumps(reply))
 
     except Exception as e:
