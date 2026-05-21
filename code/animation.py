@@ -152,5 +152,11 @@ animations = {
     ),
     'skeleton_attack': load_animation_images(
         'mobs/Skeleton/SkeletonAttack', [774, 37], [43,37], scale=2
+    ),
+    'E': load_animation_images(
+        'keyboard/Keyboard_E', [32, 15], [16, 15], scale=2
+    ),
+    'oldman': load_animation_images(
+        'oldman/oldman_idle', [960, 96], [96, 96], scale=2
     )
 }

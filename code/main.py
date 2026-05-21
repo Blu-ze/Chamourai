@@ -98,6 +98,22 @@ def run_game(network, spawn_data, player_index=0):
         p.save_location()
         map_manager.render(win, (p.position.x, p.position.y))
         p.move(map_manager)
+        map_manager.teleport_to_level_if_needed(
+            p,
+            [(p, 19), (p2, 19), (p.weapon, 18)]
+        )
+        # Détection proximité oldman
+        INTERACT_RADIUS = 80
+        dist_oldman = None
+        if map_manager.oldman:
+            dist_oldman = p.position.distance_to(map_manager.oldman.position)
+        if dist_oldman is not None and dist_oldman <= INTERACT_RADIUS:
+            map_manager.ekey.show(
+                map_manager.oldman.position.x,
+                map_manager.oldman.position.y
+            )
+        else:
+            map_manager.ekey.hide()
 
         weapon_rect = None
         if p.weapon.hitbox:
@@ -122,11 +138,12 @@ def run_game(network, spawn_data, player_index=0):
             p2.update()
 
             mob = map_manager.skeleton
-            mob.position.x = data["mob"]["x"]
-            mob.position.y = data["mob"]["y"]
-            mob.direction  = data["mob"]["dir"]
-            mob.state      = data["mob"]["state"]
-            mob.update()
+            if mob and "mob" in data:
+                mob.position.x = data["mob"]["x"]
+                mob.position.y = data["mob"]["y"]
+                mob.direction  = data["mob"]["dir"]
+                mob.state      = data["mob"]["state"]
+                mob.update()
 
         p2.update_animation()
         draw_health_bar(win, p.hp, MAX_HP)
@@ -136,7 +153,7 @@ def run_game(network, spawn_data, player_index=0):
         pygame.display.update()
 
         # Affichage PV du mob
-        if data and "mob" in data:
+        if data and "mob" in data and map_manager.skeleton:
             if not data["mob"].get("alive", True):
                 map_manager.skeleton.alive = False
                 map_manager.skeleton.kill()
@@ -167,17 +184,34 @@ while True:
                 p.save_location()
                 map_manager.render(win, (p.position.x, p.position.y))
                 p.move(map_manager)
+                map_manager.teleport_to_level_if_needed(
+                    p,
+                    [(p, 19), (p.weapon, 18)]
+                )
+                # Détection proximité oldman
+                INTERACT_RADIUS = 80
+                dist_oldman = None
+                if map_manager.oldman:
+                    dist_oldman = p.position.distance_to(map_manager.oldman.position)
+                if dist_oldman is not None and dist_oldman <= INTERACT_RADIUS:
+                    map_manager.ekey.show(
+                        map_manager.oldman.position.x,
+                        map_manager.oldman.position.y
+                    )
+                else:
+                    map_manager.ekey.hide()
 
                 now = pygame.time.get_ticks()
-                map_manager.skeleton.update_ai(p.position, map_manager.collisions, now)
-                map_manager.skeleton.update()
+                if map_manager.skeleton:
+                    map_manager.skeleton.update_ai(p.position, map_manager.collisions, now)
+                    map_manager.skeleton.update()
                 # Coup du mob sur le joueur (solo) : seulement sur la frame de coup
-                if p.alive and map_manager.skeleton.is_attack_hit_frame :
+                if p.alive and map_manager.skeleton and map_manager.skeleton.is_attack_hit_frame :
                     if map_manager.skeleton.position.distance_to(p.position) <= ATTACK_RADIUS:
                         p.take_damage(1)
 
                 # Détection de coup
-                if p.weapon.hitbox and map_manager.skeleton.alive:
+                if p.weapon.hitbox and map_manager.skeleton and map_manager.skeleton.alive:
                     if p.weapon.hitbox.colliderect(map_manager.skeleton.rect):
                         map_manager.skeleton.take_damage(1)
 
