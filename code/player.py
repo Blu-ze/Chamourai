@@ -3,7 +3,7 @@ import animation
 from weapon import Weapon
 
 MAX_HP         = 100
-DODGE_SPEED    = 8     # vitesse de déplacement pendant l'esquive
+DODGE_SPEED    = 6    # vitesse de déplacement pendant l'esquive
 DODGE_COOLDOWN = 2000  # ms avant de pouvoir esquiver à nouveau
 
 class Player(animation.AnimateSprite):
@@ -115,7 +115,7 @@ class Player(animation.AnimateSprite):
 
         # ── Déclenchement de l'esquive ────────────────────────────────────────
         if keys[pygame.K_SPACE] and now - self._dodge_used_ms >= DODGE_COOLDOWN:
-            self._start_dodge(now)
+            self._start_dodge(now, map_manager)
             return
 
         self.weapon.move(self.position.x, self.position.y)
@@ -129,12 +129,17 @@ class Player(animation.AnimateSprite):
 
     # ── Esquive ───────────────────────────────────────────────────────────────
 
-    def _start_dodge(self, now):
-        self.dodging    = True
+    def _start_dodge(self, now, map_manager):
+        self.dodging = True
         self.invincible = True
-        # Direction opposée à celle du regard
-        self._dodge_dir   = -1 if self.direction == 'right' else 1
+
+        # Direction opposée à la souris
+        mouse_x, _ = pygame.mouse.get_pos()
+        player_screen_x, _ = map_manager.world_to_screen(self.position)
+        self._dodge_dir = -1 if mouse_x >= player_screen_x else 1
+
         self._dodge_frame = 0 if self.direction == 'right' else len(self._jump_frames) // 2
+        self._dodge_last_ms = now
         self._dodge_last_ms = now
 
     def _update_dodge(self, map_manager, now):
