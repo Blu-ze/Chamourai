@@ -1034,7 +1034,7 @@
   </object>
  </objectgroup>
  <objectgroup id="45" name="OldMan">
-  <object id="301" name="OldMan" x="2326.67" y="848">
+  <object id="301" name="OldMan" x="2328" y="805.667">
    <point/>
   </object>
  </objectgroup>
@@ -1178,6 +1178,6 @@
   <object id="297" name="collision" type="collision" x="1640.5" y="241" width="214" height="139"/>
   <object id="298" name="collision" type="collision" x="1777" y="0.5" width="206" height="254"/>
   <object id="299" name="collision" type="collision" x="775.474" y="2214.71" width="106.052" height="77.5795"/>
-  <object id="302" name="collision" type="collision" x="2323.37" y="752.604" width="58.5978" height="98.7917"/>
+  <object id="302" name="collision" type="collision" x="2320.7" y="778.937" width="32.9311" height="98.7917"/>
  </objectgroup>
 </map>
