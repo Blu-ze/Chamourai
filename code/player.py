@@ -2,7 +2,7 @@ import pygame
 import animation
 from weapon import Weapon
 
-MAX_HP         = 10
+MAX_HP         = 100
 DODGE_SPEED    = 8     # vitesse de déplacement pendant l'esquive
 DODGE_COOLDOWN = 2000  # ms avant de pouvoir esquiver à nouveau
 
