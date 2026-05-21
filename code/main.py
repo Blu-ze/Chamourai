@@ -96,18 +96,10 @@ def run_game(network, spawn_data, player_index=0):
                 p.weapon.hit()
 
         p.save_location()
+        map_manager.update_oldman_interaction(p.position)
         map_manager.render(win, (p.position.x, p.position.y))
         p.move(map_manager)
-        # Détection proximité oldman
-        INTERACT_RADIUS = 80
-        dist_oldman = p.position.distance_to(map_manager.oldman.position)
-        if dist_oldman <= INTERACT_RADIUS:
-            map_manager.ekey.show(
-                map_manager.oldman.position.x,
-                map_manager.oldman.position.y
-            )
-        else:
-            map_manager.ekey.hide()
+
 
         weapon_rect = None
         if p.weapon.hitbox:
@@ -175,18 +167,10 @@ while True:
                     p.weapon.hit()
             else:
                 p.save_location()
+                map_manager.update_oldman_interaction(p.position)
                 map_manager.render(win, (p.position.x, p.position.y))
                 p.move(map_manager)
-                # Détection proximité oldman
-                INTERACT_RADIUS = 80
-                dist_oldman = p.position.distance_to(map_manager.oldman.position)
-                if dist_oldman <= INTERACT_RADIUS:
-                    map_manager.ekey.show(
-                        map_manager.oldman.position.x,
-                        map_manager.oldman.position.y
-                    )
-                else:
-                    map_manager.ekey.hide()
+
 
                 now = pygame.time.get_ticks()
                 map_manager.skeleton.update_ai(p.position, map_manager.collisions, now)

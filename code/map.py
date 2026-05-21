@@ -11,49 +11,76 @@ import pygame
 class OldMan(pygame.sprite.Sprite):
     def __init__(self, x, y):
         super().__init__()
+
         self.frames = animations.get('oldman', [])
-        self._frame_index = 0
-        self._last_frame_ms = pygame.time.get_ticks()
-        self.image = self.frames[0] if self.frames else pygame.Surface((96, 96))
+        self.frame_index = 0
+        self.animation_speed = 150
+        self.last_update = pygame.time.get_ticks()
+
+        if self.frames:
+            self.image = self.frames[0]
+        else:
+            self.image = pygame.Surface((96, 96), pygame.SRCALPHA)
+
         self.rect = self.image.get_rect(center=(x, y))
         self.position = pygame.math.Vector2(x, y)
 
     def update(self):
-        now = pygame.time.get_ticks()
         if not self.frames:
             return
-        if now - self._last_frame_ms > 150:
-            self._last_frame_ms = now
-            self._frame_index = (self._frame_index + 1) % len(self.frames)
-            self.image = self.frames[self._frame_index]
+
+        now = pygame.time.get_ticks()
+
+        if now - self.last_update > self.animation_speed:
+            self.last_update = now
+            self.frame_index = (self.frame_index + 1) % len(self.frames)
+            self.image = self.frames[self.frame_index]
+
         self.rect.center = self.position
 
 
 class EKey(pygame.sprite.Sprite):
     def __init__(self):
         super().__init__()
+
         self.frames = animations.get('E', [])
-        self._frame_index = 0
-        self._last_frame_ms = pygame.time.get_ticks()
-        self.image = self.frames[0] if self.frames else pygame.Surface((16, 15))
+        self.frame_index = 0
+        self.animation_speed = 250
+        self.last_update = pygame.time.get_ticks()
+
+        if self.frames:
+            self.hidden_image = pygame.Surface(self.frames[0].get_size(), pygame.SRCALPHA)
+            self.image = self.hidden_image
+        else:
+            self.hidden_image = pygame.Surface((32, 30), pygame.SRCALPHA)
+            self.image = self.hidden_image
+
         self.rect = self.image.get_rect()
         self.visible = False
 
     def show(self, x, y):
         self.visible = True
-        self.rect.midbottom = (x, y - 10)
+
+        if self.frames:
+            self.image = self.frames[self.frame_index]
+
+        self.rect.midbottom = (x, y + 70)
 
     def hide(self):
         self.visible = False
+        self.image = self.hidden_image
 
     def update(self):
         if not self.visible or not self.frames:
             return
+
         now = pygame.time.get_ticks()
-        if now - self._last_frame_ms > 150:
-            self._last_frame_ms = now
-            self._frame_index = (self._frame_index + 1) % len(self.frames)
-            self.image = self.frames[self._frame_index]
+
+        if now - self.last_update > self.animation_speed:
+            self.last_update = now
+            self.frame_index = (self.frame_index + 1) % len(self.frames)
+            self.image = self.frames[self.frame_index]
+
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -95,6 +122,24 @@ class MapManager:
 
         self.ekey = EKey()
         self.group.add(self.ekey, layer=20)
+
+    def update_oldman_interaction(self, player_position):
+        INTERACT_RADIUS = 150
+
+        self.oldman.update()
+
+        dist_oldman = player_position.distance_to(self.oldman.position)
+
+        if dist_oldman <= INTERACT_RADIUS:
+            self.ekey.show(
+                self.oldman.position.x,
+                self.oldman.rect.top
+            )
+        else:
+            self.ekey.hide()
+
+        self.ekey.update()
+
 
     def render(self, surface, center):
         self.group.center(center)
