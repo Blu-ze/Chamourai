@@ -23,7 +23,7 @@ class Player(animation.AnimateSprite):
         # ── Esquive ───────────────────────────────────────────────────────────
         self.dodging        = False            # esquive en cours
         self.invincible     = False            # invincibilité pendant l'esquive
-        self._dodge_dir     = 0                # -1 = gauche, +1 = droite
+        self._dodge_dir     = pygame.math.Vector2(0, 0)
         self._dodge_frame   = 0                # frame courante de l'anim jump
         self._dodge_last_ms = 0                # timestamp dernière frame anim
         self._dodge_used_ms = -DODGE_COOLDOWN  # timestamp fin de la dernière esquive
@@ -135,9 +135,12 @@ class Player(animation.AnimateSprite):
         self.invincible = True
 
         # Direction opposée à la souris
-        mouse_x, _ = pygame.mouse.get_pos()
-        player_screen_x, _ = map_manager.world_to_screen(self.position)
-        self._dodge_dir = -1 if mouse_x >= player_screen_x else 1
+        mouse_pos = pygame.math.Vector2(pygame.mouse.get_pos())
+        player_screen_pos = pygame.math.Vector2(map_manager.world_to_screen(self.position))
+        dodge_dir = player_screen_pos - mouse_pos
+        if dodge_dir.length_squared() == 0:
+            dodge_dir = pygame.math.Vector2(-1 if self.direction == 'right' else 1, 0)
+        self._dodge_dir = dodge_dir.normalize()
 
         self._dodge_frame = 0 if self.direction == 'right' else len(self._jump_frames) // 2
         self._dodge_last_ms = now
@@ -149,11 +152,17 @@ class Player(animation.AnimateSprite):
         frame_end = half if self.direction == 'right' else len(frames)
 
         # Avance la position
-        self.position.x += self._dodge_dir * DODGE_SPEED
+        self.position.x += self._dodge_dir.x * DODGE_SPEED
         self.rect.center = self.position
         self.feet.midbottom = self.rect.midbottom
         if self.feet.collidelist(map_manager.collisions) > -1:
-            self.position.x -= self._dodge_dir * DODGE_SPEED  # annule si collision
+            self.position.x -= self._dodge_dir.x * DODGE_SPEED  # annule si collision
+
+        self.position.y += self._dodge_dir.y * DODGE_SPEED
+        self.rect.center = self.position
+        self.feet.midbottom = self.rect.midbottom
+        if self.feet.collidelist(map_manager.collisions) > -1:
+            self.position.y -= self._dodge_dir.y * DODGE_SPEED
 
         # Avance l'animation
         if now - self._dodge_last_ms > DODGE_ANIMATION_SPEED:
