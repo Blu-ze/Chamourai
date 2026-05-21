@@ -11,76 +11,49 @@ import pygame
 class OldMan(pygame.sprite.Sprite):
     def __init__(self, x, y):
         super().__init__()
-
         self.frames = animations.get('oldman', [])
-        self.frame_index = 0
-        self.animation_speed = 150
-        self.last_update = pygame.time.get_ticks()
-
-        if self.frames:
-            self.image = self.frames[0]
-        else:
-            self.image = pygame.Surface((96, 96), pygame.SRCALPHA)
-
+        self._frame_index = 0
+        self._last_frame_ms = pygame.time.get_ticks()
+        self.image = self.frames[0] if self.frames else pygame.Surface((96, 96))
         self.rect = self.image.get_rect(center=(x, y))
         self.position = pygame.math.Vector2(x, y)
 
     def update(self):
+        now = pygame.time.get_ticks()
         if not self.frames:
             return
-
-        now = pygame.time.get_ticks()
-
-        if now - self.last_update > self.animation_speed:
-            self.last_update = now
-            self.frame_index = (self.frame_index + 1) % len(self.frames)
-            self.image = self.frames[self.frame_index]
-
+        if now - self._last_frame_ms > 150:
+            self._last_frame_ms = now
+            self._frame_index = (self._frame_index + 1) % len(self.frames)
+            self.image = self.frames[self._frame_index]
         self.rect.center = self.position
 
 
 class EKey(pygame.sprite.Sprite):
     def __init__(self):
         super().__init__()
-
         self.frames = animations.get('E', [])
-        self.frame_index = 0
-        self.animation_speed = 250
-        self.last_update = pygame.time.get_ticks()
-
-        if self.frames:
-            self.hidden_image = pygame.Surface(self.frames[0].get_size(), pygame.SRCALPHA)
-            self.image = self.hidden_image
-        else:
-            self.hidden_image = pygame.Surface((32, 30), pygame.SRCALPHA)
-            self.image = self.hidden_image
-
+        self._frame_index = 0
+        self._last_frame_ms = pygame.time.get_ticks()
+        self.image = self.frames[0] if self.frames else pygame.Surface((16, 15))
         self.rect = self.image.get_rect()
         self.visible = False
 
     def show(self, x, y):
         self.visible = True
-
-        if self.frames:
-            self.image = self.frames[self.frame_index]
-
-        self.rect.midbottom = (x, y + 70)
+        self.rect.midbottom = (x, y - 10)
 
     def hide(self):
         self.visible = False
-        self.image = self.hidden_image
 
     def update(self):
         if not self.visible or not self.frames:
             return
-
         now = pygame.time.get_ticks()
-
-        if now - self.last_update > self.animation_speed:
-            self.last_update = now
-            self.frame_index = (self.frame_index + 1) % len(self.frames)
-            self.image = self.frames[self.frame_index]
-
+        if now - self._last_frame_ms > 150:
+            self._last_frame_ms = now
+            self._frame_index = (self._frame_index + 1) % len(self.frames)
+            self.image = self.frames[self._frame_index]
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -90,15 +63,27 @@ def map_path(relative_path: str) -> str:
 class MapManager:
 
     def __init__(self, screen_size):
-        self.tmx_data = pytmx.util_pygame.load_pygame(map_path('map/spawn.tmx'))
+        self.screen_size = screen_size
+        self.current_map = None
+        self.load_map("spawn")
 
-        self.spawn1    = self.tmx_data.get_object_by_name("Player1Spawn")
-        self.spawn2    = self.tmx_data.get_object_by_name("Player2Spawn")
-        self.mob_spawn = self.tmx_data.get_object_by_name("MobSpawn")
+    def get_object(self, name):
+        try:
+            return self.tmx_data.get_object_by_name(name)
+        except (KeyError, ValueError):
+            return None
+
+    def load_map(self, map_name):
+        self.current_map = map_name
+        self.tmx_data = pytmx.util_pygame.load_pygame(map_path(f'map/{map_name}.tmx'))
+
+        self.spawn1    = self.get_object("Player1Spawn")
+        self.spawn2    = self.get_object("Player2Spawn")
+        self.mob_spawn = self.get_object("MobSpawn")
 
         self.map_layer = pyscroll.BufferedRenderer(
             pyscroll.data.TiledMapData(self.tmx_data),
-            screen_size
+            self.screen_size
         )
         self.map_layer.zoom = 2
 
@@ -108,38 +93,48 @@ class MapManager:
         )
 
         self.collisions = []
+        self.teleports = []
         for obj in self.tmx_data.objects:
             if obj.type == "collision":
                 self.collisions.append(pygame.Rect(obj.x, obj.y, obj.width, obj.height))
+            if obj.name == "teleport" or obj.type == "teleport":
+                self.teleports.append(pygame.Rect(obj.x, obj.y, obj.width, obj.height))
 
         # Mob affiché côté client (pas d'IA, juste le rendu)
-        self.skeleton = Mob('skeleton', self.mob_spawn.x, self.mob_spawn.y, 100)
-        self.group.add(self.skeleton, layer=18)
+        self.skeleton = None
+        if self.mob_spawn:
+            self.skeleton = Mob('skeleton', self.mob_spawn.x, self.mob_spawn.y, 100)
+            self.group.add(self.skeleton, layer=18)
 
-        self.oldman_obj = self.tmx_data.get_object_by_name("OldMan")
-        self.oldman = OldMan(self.oldman_obj.x, self.oldman_obj.y)
-        self.group.add(self.oldman, layer=19)
+        self.oldman_obj = self.get_object("OldMan")
+        self.oldman = None
+        if self.oldman_obj:
+            self.oldman = OldMan(self.oldman_obj.x, self.oldman_obj.y)
+            self.group.add(self.oldman, layer=19)
 
         self.ekey = EKey()
         self.group.add(self.ekey, layer=20)
 
-    def update_oldman_interaction(self, player_position):
-        INTERACT_RADIUS = 150
+    def teleport_to_level_if_needed(self, player, sprites_to_add):
+        if self.current_map != "spawn":
+            return False
 
-        self.oldman.update()
+        if player.feet.collidelist(self.teleports) == -1:
+            return False
 
-        dist_oldman = player_position.distance_to(self.oldman.position)
+        self.load_map("level")
 
-        if dist_oldman <= INTERACT_RADIUS:
-            self.ekey.show(
-                self.oldman.position.x,
-                self.oldman.rect.top
-            )
-        else:
-            self.ekey.hide()
+        if self.spawn1:
+            player.position.x = self.spawn1.x
+            player.position.y = self.spawn1.y
+            player.update()
+            player.save_location()
+            player.weapon.move(player.position.x, player.position.y)
 
-        self.ekey.update()
+        for sprite, layer in sprites_to_add:
+            self.group.add(sprite, layer=layer)
 
+        return True
 
     def render(self, surface, center):
         self.group.center(center)
