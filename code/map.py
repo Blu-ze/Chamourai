@@ -4,6 +4,57 @@ import pyscroll
 import os
 from mob import Mob
 
+
+from animation import AnimateSprite, animations
+import pygame
+
+class OldMan(pygame.sprite.Sprite):
+    def __init__(self, x, y):
+        super().__init__()
+        self.frames = animations.get('oldman', [])
+        self._frame_index = 0
+        self._last_frame_ms = pygame.time.get_ticks()
+        self.image = self.frames[0] if self.frames else pygame.Surface((96, 96))
+        self.rect = self.image.get_rect(center=(x, y))
+        self.position = pygame.math.Vector2(x, y)
+
+    def update(self):
+        now = pygame.time.get_ticks()
+        if not self.frames:
+            return
+        if now - self._last_frame_ms > 150:
+            self._last_frame_ms = now
+            self._frame_index = (self._frame_index + 1) % len(self.frames)
+            self.image = self.frames[self._frame_index]
+        self.rect.center = self.position
+
+
+class EKey(pygame.sprite.Sprite):
+    def __init__(self):
+        super().__init__()
+        self.frames = animations.get('E', [])
+        self._frame_index = 0
+        self._last_frame_ms = pygame.time.get_ticks()
+        self.image = self.frames[0] if self.frames else pygame.Surface((16, 15))
+        self.rect = self.image.get_rect()
+        self.visible = False
+
+    def show(self, x, y):
+        self.visible = True
+        self.rect.midbottom = (x, y - 10)
+
+    def hide(self):
+        self.visible = False
+
+    def update(self):
+        if not self.visible or not self.frames:
+            return
+        now = pygame.time.get_ticks()
+        if now - self._last_frame_ms > 150:
+            self._last_frame_ms = now
+            self._frame_index = (self._frame_index + 1) % len(self.frames)
+            self.image = self.frames[self._frame_index]
+
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 def map_path(relative_path: str) -> str:
@@ -37,6 +88,13 @@ class MapManager:
         # Mob affiché côté client (pas d'IA, juste le rendu)
         self.skeleton = Mob('skeleton', self.mob_spawn.x, self.mob_spawn.y, 100)
         self.group.add(self.skeleton, layer=18)
+
+        self.oldman_obj = self.tmx_data.get_object_by_name("OldMan")
+        self.oldman = OldMan(self.oldman_obj.x, self.oldman_obj.y)
+        self.group.add(self.oldman, layer=19)
+
+        self.ekey = EKey()
+        self.group.add(self.ekey, layer=20)
 
     def render(self, surface, center):
         self.group.center(center)
