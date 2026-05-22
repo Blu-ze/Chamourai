@@ -50,6 +50,26 @@ class Player(animation.AnimateSprite):
             self.alive = False
             self.state = "idle"
 
+    def get_dodge_state(self):
+        return {
+            "dodging": self.dodging,
+            "dodge_frame": self._dodge_frame,
+        }
+
+    def apply_remote_dodge_animation(self, dodging, dodge_frame):
+        if not dodging:
+            self.update_animation()
+            return
+
+        frames = self._jump_frames
+        if not frames:
+            self.update_animation()
+            return
+
+        frame = int(dodge_frame or 0)
+        frame = max(0, min(frame, len(frames) - 1))
+        self.image = frames[frame]
+
     # ── Logique principale ────────────────────────────────────────────────────
 
     def move(self, map_manager):
@@ -133,6 +153,7 @@ class Player(animation.AnimateSprite):
     def _start_dodge(self, now, map_manager):
         self.dodging = True
         self.invincible = True
+        self.state = "dodge"
 
         # Direction opposée à la souris
         mouse_pos = pygame.math.Vector2(pygame.mouse.get_pos())
