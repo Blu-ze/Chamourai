@@ -158,5 +158,23 @@ animations = {
     ),
     'oldman': load_animation_images(
         'oldman/oldman_idle', [960, 96], [96, 96], scale=2
+    ),
+    'necromancer_idle': load_animation_images(
+        'mobs/Necromancer/NecromancerIdle', [1280,128], [160,128], scale=1
+    ),
+    'necromancer_walk': load_animation_images(
+        'mobs/Necromancer/NecromancerWalk', [1280,128], [160,128], scale=1
+    ),
+    'necromancer_attack': load_animation_images(
+        'mobs/Necromancer/NecromancerAttack', [2080, 128], [160,128], scale=1
+    ),
+    'necromancer_hit': load_animation_images(
+        'mobs/Necromancer/NecromancerHit', [800, 128], [160,128], scale=1
+    ),
+    'necromancer_dead': load_animation_images(
+        'mobs/Necromancer/NecromancerDeath', [1440, 128], [160,128], scale=1
+    ),
+    'necromancer_fireball': load_animation_images(
+        'mobs/Necromancer/EnergyBall', [1152, 128], [128,128], scale=1
     )
 }

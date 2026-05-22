@@ -18,12 +18,44 @@ pygame.init()
 tmx_data  = pytmx.TiledMap(map_path('map/spawn.tmx'))
 spawn1    = tmx_data.get_object_by_name("Player1Spawn")
 spawn2    = tmx_data.get_object_by_name("Player2Spawn")
-mob_spawn = tmx_data.get_object_by_name("MobSpawn")
+
+def get_optional_object(name):
+    try:
+        return tmx_data.get_object_by_name(name)
+    except (KeyError, ValueError):
+        return None
+
+skeleton_spawns = [obj for obj in tmx_data.objects if obj.name == "Skeleton"]
+if not skeleton_spawns:
+    legacy_spawn = get_optional_object("MobSpawn")
+    if legacy_spawn:
+        skeleton_spawns.append(legacy_spawn)
 
 collisions = []
 for obj in tmx_data.objects:
     if obj.type == "collision":
         collisions.append(pygame.Rect(obj.x, obj.y, obj.width, obj.height))
+
+def mob_to_dict(mob):
+    return {
+        "x":     mob.position.x,
+        "y":     mob.position.y,
+        "dir":   mob.direction,
+        "state": mob.state,
+        "alive": mob.alive,
+        "hp":    mob.hp,
+    }
+
+def spawn_to_dict(spawn):
+    return {"x": spawn.x, "y": spawn.y, "dir": "right", "state": "idle"}
+
+def create_skeletons():
+    skeletons = []
+    for spawn in skeleton_spawns:
+        skeleton = Mob('skeleton', spawn.x, spawn.y, 100)
+        skeleton.init_pathfinding(collisions)
+        skeletons.append(skeleton)
+    return skeletons
 
 server = "0.0.0.0"
 port   = 5555
@@ -45,8 +77,8 @@ print("Serveur démarré, en attente de connexions...")
 #   "players": [conn_host, conn_guest],
 #   "states":  [dict_host, dict_guest],
 #   "started": False,
-#   "mob":     dict_mob,
-#   "skeleton": Mob,
+#   "mobs":    [dict_mob, ...],
+#   "skeletons": [Mob, ...],
 # }
 salons = {}
 salons_lock = threading.Lock()
@@ -68,7 +100,7 @@ def mob_loop(code):
             salon = salons[code]
             if not salon["started"]:
                 continue
-            skeleton = salon["skeleton"]
+            skeletons = salon["skeletons"]
             states   = salon["states"]
 
         now_ms = pygame.time.get_ticks()
@@ -76,20 +108,15 @@ def mob_loop(code):
             pygame.math.Vector2(states[0]["x"], states[0]["y"]),
             pygame.math.Vector2(states[1]["x"], states[1]["y"])
         ]
-        nearest = min(positions, key=lambda p: skeleton.position.distance_to(p))
-        skeleton.update_ai(nearest, collisions, now_ms)
-        skeleton.update()
+        for skeleton in skeletons:
+            nearest = min(positions, key=lambda p: skeleton.position.distance_to(p))
+            skeleton.update_ai(nearest, collisions, now_ms, skeletons)
+            skeleton.update()
 
         with salons_lock:
             if code in salons:
-                salons[code]["mob"] = {
-                    "x":     skeleton.position.x,
-                    "y":     skeleton.position.y,
-                    "dir":   skeleton.direction,
-                    "state": skeleton.state,
-                    "alive": skeleton.alive,
-                    "hp":    skeleton.hp,
-                }
+                salons[code]["mobs"] = [mob_to_dict(skeleton) for skeleton in skeletons]
+                salons[code]["mob"] = salons[code]["mobs"][0] if salons[code]["mobs"] else None
 
 def threaded_client(conn):
     try:
@@ -105,8 +132,9 @@ def threaded_client(conn):
                         {"x": spawn2.x, "y": spawn2.y, "dir": "right", "state": "idle",  "skin": "player2"}
                     ],
                     "started":   False,
-                    "mob":       {"x": mob_spawn.x, "y": mob_spawn.y, "dir": "right", "state": "idle"},
-                    "skeleton":  None,
+                    "mobs":      [spawn_to_dict(spawn) for spawn in skeleton_spawns],
+                    "mob":       spawn_to_dict(skeleton_spawns[0]) if skeleton_spawns else None,
+                    "skeletons": [],
                     "host_conn": conn
                 }
             conn.sendall(pickle.dumps({"status": "ok", "code": code, "player": 0}))
@@ -129,9 +157,10 @@ def threaded_client(conn):
                     if msg == "START":
                         with salons_lock:
                             salons[code]["started"] = True
-                            sk = Mob('skeleton', mob_spawn.x, mob_spawn.y, 100)
-                            sk.init_pathfinding(collisions)
-                            salons[code]["skeleton"] = sk
+                            skeletons = create_skeletons()
+                            salons[code]["skeletons"] = skeletons
+                            salons[code]["mobs"] = [mob_to_dict(skeleton) for skeleton in skeletons]
+                            salons[code]["mob"] = salons[code]["mobs"][0] if salons[code]["mobs"] else None
                             guest_conn = salons[code]["players"][1]
 
                         # Envoyer spawn aux deux joueurs
@@ -191,21 +220,24 @@ def threaded_client(conn):
                     break
                 salons[code]["states"][player_index] = data
                 other = salons[code]["states"][1 - player_index]
-                mob = salons[code]["mob"]
-                skeleton = salons[code]["skeleton"]
+                mobs = salons[code]["mobs"]
+                skeletons = salons[code]["skeletons"]
 
                 # Détection de coup : le joueur envoie weapon_rect pendant son animation
-                if data.get("hit") and skeleton and skeleton.alive:
+                if data.get("hit") and skeletons:
                     weapon_rect = data.get("weapon_rect")
                     if weapon_rect:
                         wr = pygame.Rect(weapon_rect)
-                        mob_rect = pygame.Rect(mob["x"] - 20, mob["y"] - 20, 40, 40)
-                        if wr.colliderect(mob_rect):
-                            skeleton.take_damage(1)
-                            mob["hp"]    = skeleton.hp
-                            mob["alive"] = skeleton.alive
+                        for index, skeleton in enumerate(skeletons):
+                            if not skeleton.alive:
+                                continue
+                            if wr.colliderect(skeleton.hitbox):
+                                skeleton.take_damage(1)
+                                mobs[index] = mob_to_dict(skeleton)
+                                salons[code]["mobs"] = mobs
+                                salons[code]["mob"] = mobs[0] if mobs else None
 
-            reply = {"player": other, "mob": mob}
+            reply = {"player": other, "mobs": mobs, "mob": mobs[0] if mobs else None}
             conn.sendall(pickle.dumps(reply))
 
     except Exception as e:

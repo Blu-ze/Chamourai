@@ -182,22 +182,22 @@ def run_game(network, spawn_data, player_index=0):
                 animating = other_data.get("hit", False),
             )
 
-            mob = map_manager.skeleton
-            if mob and "mob" in data:
-                mob_data = data["mob"]
-                server_hp = mob_data.get("hp", mob.hp)
-                # Déclenche les animations via take_damage si le HP a baissé
-                if server_hp < mob.hp:
-                    damage = mob.hp - server_hp
-                    mob.take_damage(damage)
-                # Synchronise position/direction seulement si pas en animation prioritaire
-                if not mob.dead and not mob.is_hit:
-                    mob.position.x = mob_data["x"]
-                    mob.position.y = mob_data["y"]
-                    mob.direction  = mob_data["dir"]
-                    mob.state      = mob_data["state"]
-                mob.update()
-
+            mobs_data = data.get("mobs")
+            if mobs_data is None and "mob" in data:
+                mobs_data = [data["mob"]]
+            if mobs_data:
+                for mob, mob_data in zip(map_manager.mobs, mobs_data):
+                    server_hp = mob_data.get("hp", mob.hp)
+                    if server_hp < mob.hp:
+                        damage = mob.hp - server_hp
+                        mob.take_damage(damage)
+                    # Synchronise position/direction seulement si pas en animation prioritaire
+                    if not mob.dead and not mob.is_hit:
+                        mob.position.x = mob_data["x"]
+                        mob.position.y = mob_data["y"]
+                        mob.direction  = mob_data["dir"]
+                        mob.state      = mob_data["state"]
+                    mob.update()
         p2.update_animation()
         draw_health_bar(win, p.hp, MAX_HP)
 
@@ -248,18 +248,21 @@ while True:
                 update_oldman_prompt(map_manager, p, parchment_open)
 
                 now = pygame.time.get_ticks()
-                if map_manager.skeleton:
-                    map_manager.skeleton.update_ai(p.position, map_manager.collisions, now)
-                    map_manager.skeleton.update()
+                for mob in map_manager.mobs:
+                    mob.update_ai(p.position, map_manager.collisions, now, map_manager.mobs)
+                    mob.update()
                 # Coup du mob sur le joueur (solo) : seulement sur la frame de coup
-                if p.alive and map_manager.skeleton and map_manager.skeleton.is_attack_hit_frame :
-                    if map_manager.skeleton.position.distance_to(p.position) <= ATTACK_RADIUS:
-                        p.take_damage(1)
+                for mob in map_manager.mobs:
+                    if p.alive and mob.is_attack_hit_frame:
+                        if mob.position.distance_to(p.position) <= ATTACK_RADIUS:
+                            p.take_damage(1)
+                            break
 
                 # Détection de coup
-                if p.weapon.hitbox and map_manager.skeleton and map_manager.skeleton.alive:
-                    if p.weapon.hitbox.colliderect(map_manager.skeleton.rect):
-                        map_manager.skeleton.take_damage(1)
+                if p.weapon.hitbox:
+                    for mob in map_manager.mobs:
+                        if mob.alive and p.weapon.hitbox.colliderect(mob.hitbox):
+                            mob.take_damage(1)
 
                 draw_health_bar(win, p.hp, MAX_HP)
 
