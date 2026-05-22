@@ -35,22 +35,28 @@ class EKey(pygame.sprite.Sprite):
         self.frames = animations.get('E', [])
         self._frame_index = 0
         self._last_frame_ms = pygame.time.get_ticks()
-        self.image = self.frames[0] if self.frames else pygame.Surface((16, 15))
+        self._animation_speed = 300
+        first_frame = self.frames[0] if self.frames else pygame.Surface((16, 15))
+        self.hidden_image = pygame.Surface(first_frame.get_size(), pygame.SRCALPHA)
+        self.image = self.hidden_image
         self.rect = self.image.get_rect()
         self.visible = False
 
     def show(self, x, y):
         self.visible = True
+        if self.frames:
+            self.image = self.frames[self._frame_index]
         self.rect.midbottom = (x, y - 10)
 
     def hide(self):
         self.visible = False
+        self.image = self.hidden_image
 
     def update(self):
         if not self.visible or not self.frames:
             return
         now = pygame.time.get_ticks()
-        if now - self._last_frame_ms > 150:
+        if now - self._last_frame_ms > self._animation_speed:
             self._last_frame_ms = now
             self._frame_index = (self._frame_index + 1) % len(self.frames)
             self.image = self.frames[self._frame_index]
@@ -136,7 +142,13 @@ class MapManager:
 
         return True
 
+    def update_animations(self):
+        if self.oldman:
+            self.oldman.update()
+        self.ekey.update()
+
     def render(self, surface, center):
+        self.update_animations()
         self.group.center(center)
         self.group.draw(surface)
 
