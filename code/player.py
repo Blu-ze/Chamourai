@@ -29,7 +29,7 @@ class Player(animation.AnimateSprite):
         self._dodge_used_ms = -DODGE_COOLDOWN  # timestamp fin de la dernière esquive
 
         # Frames de l'animation jump (même structure que walk : moitié droite / moitié gauche)
-        self._jump_frames = animation.animations.get('player_jump', [])
+        self._jump_frames = animation.animations.get(f'{skin}_jump', [])
 
     # ── Utilitaires ───────────────────────────────────────────────────────────
 
