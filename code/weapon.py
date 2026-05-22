@@ -69,3 +69,30 @@ class Weapon(animation.AnimateSprite):
         )
 
         return new_direction
+
+    def apply_remote(self, x, y, angle, direction, animating):
+        """Met à jour l'arme d'un joueur distant (sans souris ni map_manager)."""
+        self.position = pygame.math.Vector2(x, y)
+        self.direction = direction
+        self.angle = angle
+
+        if direction == 'right':
+            base_image = self.original_image_right
+        else:
+            base_image = self.original_image_left
+
+        if animating and not self.animation:
+            self.start_animation()
+
+        if not self.animation:
+            self.image = pygame.transform.rotate(base_image, self.angle - 90)
+
+        self.animate_hit()
+
+        rotated_offset = self.handle_offset.rotate(-self.angle + 90)
+        self.rect = self.image.get_rect(
+            center=(
+                self.position[0] - rotated_offset.x,
+                self.position[1] - rotated_offset.y + 7
+            )
+        )

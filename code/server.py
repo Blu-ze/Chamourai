@@ -86,7 +86,9 @@ def mob_loop(code):
                     "x":     skeleton.position.x,
                     "y":     skeleton.position.y,
                     "dir":   skeleton.direction,
-                    "state": skeleton.state
+                    "state": skeleton.state,
+                    "alive": skeleton.alive,
+                    "hp":    skeleton.hp,
                 }
 
 def threaded_client(conn):
@@ -192,15 +194,15 @@ def threaded_client(conn):
                 mob = salons[code]["mob"]
                 skeleton = salons[code]["skeleton"]
 
-                # Détection de coup : le joueur envoie "hit" = True
+                # Détection de coup : le joueur envoie weapon_rect pendant son animation
                 if data.get("hit") and skeleton and skeleton.alive:
-                    mob_rect = pygame.Rect(mob["x"] - 20, mob["y"] - 20, 40, 40)
                     weapon_rect = data.get("weapon_rect")
                     if weapon_rect:
                         wr = pygame.Rect(weapon_rect)
+                        mob_rect = pygame.Rect(mob["x"] - 20, mob["y"] - 20, 40, 40)
                         if wr.colliderect(mob_rect):
                             skeleton.take_damage(1)
-                            mob["hp"] = skeleton.hp
+                            mob["hp"]    = skeleton.hp
                             mob["alive"] = skeleton.alive
 
             reply = {"player": other, "mob": mob}

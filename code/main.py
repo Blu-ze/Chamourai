@@ -81,6 +81,7 @@ def run_game(network, spawn_data, player_index=0):
     map_manager.add_sprite(p,        layer=19)
     map_manager.add_sprite(p2,       layer=19)
     map_manager.add_sprite(p.weapon, layer=18)
+    map_manager.add_sprite(p2.weapon, layer=18)
 
     clock = pygame.time.Clock()
 
@@ -100,7 +101,7 @@ def run_game(network, spawn_data, player_index=0):
         p.move(map_manager)
         map_manager.teleport_to_level_if_needed(
             p,
-            [(p, 19), (p2, 19), (p.weapon, 18)]
+            [(p, 19), (p2, 19), (p.weapon, 18), (p2.weapon, 18)]
         )
         # Détection proximité oldman
         INTERACT_RADIUS = 80
@@ -127,6 +128,8 @@ def run_game(network, spawn_data, player_index=0):
             "state": p.state,
             "hit": p.weapon.animation,
             "weapon_rect": weapon_rect,
+            "weapon_angle": p.weapon.angle,
+            "weapon_dir": p.weapon.direction,
             "skin": my_skin
         })
 
@@ -137,12 +140,29 @@ def run_game(network, spawn_data, player_index=0):
             p2.state      = data["player"]["state"]
             p2.update()
 
+            other_data = data["player"]
+            p2.weapon.apply_remote(
+                x         = other_data["x"],
+                y         = other_data["y"],
+                angle     = other_data.get("weapon_angle", 0),
+                direction = other_data.get("weapon_dir", "right"),
+                animating = other_data.get("hit", False),
+            )
+
             mob = map_manager.skeleton
             if mob and "mob" in data:
-                mob.position.x = data["mob"]["x"]
-                mob.position.y = data["mob"]["y"]
-                mob.direction  = data["mob"]["dir"]
-                mob.state      = data["mob"]["state"]
+                mob_data = data["mob"]
+                server_hp = mob_data.get("hp", mob.hp)
+                # Déclenche les animations via take_damage si le HP a baissé
+                if server_hp < mob.hp:
+                    damage = mob.hp - server_hp
+                    mob.take_damage(damage)
+                # Synchronise position/direction seulement si pas en animation prioritaire
+                if not mob.dead and not mob.is_hit:
+                    mob.position.x = mob_data["x"]
+                    mob.position.y = mob_data["y"]
+                    mob.direction  = mob_data["dir"]
+                    mob.state      = mob_data["state"]
                 mob.update()
 
         p2.update_animation()
@@ -151,12 +171,6 @@ def run_game(network, spawn_data, player_index=0):
         if not p.alive:
             draw_death_screen(win)
         pygame.display.update()
-
-        # Affichage PV du mob
-        if data and "mob" in data and map_manager.skeleton:
-            if not data["mob"].get("alive", True):
-                map_manager.skeleton.alive = False
-                map_manager.skeleton.kill()
 
 
 # ── Boucle principale ─────────────────────────────────────────────────────────
