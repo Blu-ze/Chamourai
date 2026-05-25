@@ -3,10 +3,11 @@ import animation
 import math
 
 class Weapon(animation.AnimateSprite):
-    def __init__(self, weapon_name, x, y, animation_speed):
+    def __init__(self, weapon_name, x, y, animation_speed,  interface=None):
         super().__init__(weapon_name, animation_speed, True)
         self.damage = 0
         self.position = pygame.math.Vector2(x, y)
+        self.interface = interface
 
         self.original_image_right = self.images[0]
         self.original_image_left = self.images[len(self.images) // 2]
@@ -30,6 +31,9 @@ class Weapon(animation.AnimateSprite):
     def hit(self):
         if not self.animation:  # on ne relance que si l'animation est terminée
             self.start_animation()
+            # Jouer le son du slash
+            if self.interface and 'slash' in self.interface.sounds:
+                self.interface.sounds['slash'].play()
 
     def update(self):
         self.animate_hit()

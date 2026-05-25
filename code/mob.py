@@ -255,7 +255,7 @@ class Mob(animation.AnimateSprite):
 
     # ── Dégâts / mort ──────────────────────────────────────────────────────────
 
-    def take_damage(self, amount=1):
+    def take_damage(self, amount=1, interface=None):
         if not self.alive:
             return
         self.hp -= amount
@@ -263,6 +263,8 @@ class Mob(animation.AnimateSprite):
             self.hp    = 0
             self.alive = False
             self.dead  = True
+            if interface and 'kill' in interface.sounds:
+                interface.sounds['kill'].play()
             # Réinitialise l'index pour jouer skeleton_dead depuis le début
             self._frame_index   = 0
             self._last_frame_ms = pygame.time.get_ticks()
