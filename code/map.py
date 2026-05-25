@@ -35,22 +35,28 @@ class EKey(pygame.sprite.Sprite):
         self.frames = animations.get('E', [])
         self._frame_index = 0
         self._last_frame_ms = pygame.time.get_ticks()
-        self.image = self.frames[0] if self.frames else pygame.Surface((16, 15))
+        self._animation_speed = 300
+        first_frame = self.frames[0] if self.frames else pygame.Surface((16, 15))
+        self.hidden_image = pygame.Surface(first_frame.get_size(), pygame.SRCALPHA)
+        self.image = self.hidden_image
         self.rect = self.image.get_rect()
         self.visible = False
 
     def show(self, x, y):
         self.visible = True
+        if self.frames:
+            self.image = self.frames[self._frame_index]
         self.rect.midbottom = (x, y - 10)
 
     def hide(self):
         self.visible = False
+        self.image = self.hidden_image
 
     def update(self):
         if not self.visible or not self.frames:
             return
         now = pygame.time.get_ticks()
-        if now - self._last_frame_ms > 150:
+        if now - self._last_frame_ms > self._animation_speed:
             self._last_frame_ms = now
             self._frame_index = (self._frame_index + 1) % len(self.frames)
             self.image = self.frames[self._frame_index]
@@ -79,7 +85,6 @@ class MapManager:
 
         self.spawn1    = self.get_object("Player1Spawn")
         self.spawn2    = self.get_object("Player2Spawn")
-        self.mob_spawn = self.get_object("MobSpawn")
 
         self.map_layer = pyscroll.BufferedRenderer(
             pyscroll.data.TiledMapData(self.tmx_data),
@@ -94,11 +99,14 @@ class MapManager:
 
         self.collisions = []
         self.teleports = []
+        skeleton_spawns = []
         for obj in self.tmx_data.objects:
             if obj.type == "collision":
                 self.collisions.append(pygame.Rect(obj.x, obj.y, obj.width, obj.height))
             if obj.name == "teleport" or obj.type == "teleport":
                 self.teleports.append(pygame.Rect(obj.x, obj.y, obj.width, obj.height))
+            if obj.name == "Skeleton":
+                skeleton_spawns.append(obj)
 
         # Collisions peintes directement dans le calque de tuiles Walls.
         for layer in self.tmx_data.layers:
@@ -116,10 +124,18 @@ class MapManager:
                     )
 
         # Mob affiché côté client (pas d'IA, juste le rendu)
-        self.skeleton = None
-        if self.mob_spawn:
-            self.skeleton = Mob('skeleton', self.mob_spawn.x, self.mob_spawn.y, 100)
-            self.group.add(self.skeleton, layer=18)
+        if not skeleton_spawns:
+            legacy_spawn = self.get_object("MobSpawn")
+            if legacy_spawn:
+                skeleton_spawns.append(legacy_spawn)
+
+        self.mobs = []
+        for spawn in skeleton_spawns:
+            mob = Mob('skeleton', spawn.x, spawn.y, 100)
+            mob.init_pathfinding(self.collisions)
+            self.mobs.append(mob)
+            self.group.add(mob, layer=18)
+        self.skeleton = self.mobs[0] if self.mobs else None
 
         self.oldman_obj = self.get_object("OldMan")
         self.oldman = None
@@ -151,7 +167,13 @@ class MapManager:
 
         return True
 
+    def update_animations(self):
+        if self.oldman:
+            self.oldman.update()
+        self.ekey.update()
+
     def render(self, surface, center):
+        self.update_animations()
         self.group.center(center)
         self.group.draw(surface)
 

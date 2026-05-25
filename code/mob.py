@@ -20,6 +20,7 @@ class Mob(animation.AnimateSprite):
         self.rect.center = self.position
         self.speed       = 2.0
         self.feet        = pygame.Rect(0, 0, max(1, self.rect.width * 0.5), 12)
+        self.hitbox      = pygame.Rect(0, 0, 32, 32)
         self.state       = 'idle'
         self.path        = []
         self.blocked_cells     = set()
@@ -34,6 +35,7 @@ class Mob(animation.AnimateSprite):
 
         self.is_hit         = False
         self.hit_anim_until = 0
+        self._position_hitbox()
 
         self._prev_state      = 'idle'  # pour détecter les transitions d'état
         self._attack_hit_done = False   # True après avoir infligé les dégâts de ce cycle
@@ -45,7 +47,7 @@ class Mob(animation.AnimateSprite):
 
     # ── IA ─────────────────────────────────────────────────────────────────────
 
-    def update_ai(self, player_position, collisions, now_ms):
+    def update_ai(self, player_position, collisions, now_ms, other_mobs=None):
         if not self.alive:
             return
         try:
@@ -62,13 +64,13 @@ class Mob(animation.AnimateSprite):
             self.path  = []
 
         if self.state == 'chase':
-            self._chase(player_position, collisions, now_ms)
+            self._chase(player_position, collisions, now_ms, other_mobs)
         elif self.state == 'attack':
             self.path = []
             dx = player_position.x - self.position.x
             self.set_direction('left' if dx < 0 else 'right')
 
-    def _chase(self, player_position, collisions, now_ms):
+    def _chase(self, player_position, collisions, now_ms, other_mobs=None):
         if now_ms - self._last_pathfind_ms > PATHFIND_INTERVAL or not self.path:
             self._last_pathfind_ms = now_ms
             try:
@@ -104,18 +106,22 @@ class Mob(animation.AnimateSprite):
         self.position.x += direction_vec.x * self.speed
         self.rect.center    = self.position
         self.feet.midbottom = self.rect.midbottom
-        if collisions and self.feet.collidelist(collisions) > -1:
+        self._position_hitbox()
+        if (collisions and self.feet.collidelist(collisions) > -1) or self._collides_with_mobs(other_mobs):
             self.position.x = self.old_position.x
             self.rect.center    = self.position
             self.feet.midbottom = self.rect.midbottom
+            self._position_hitbox()
 
         self.position.y += direction_vec.y * self.speed
         self.rect.center    = self.position
         self.feet.midbottom = self.rect.midbottom
-        if collisions and self.feet.collidelist(collisions) > -1:
+        self._position_hitbox()
+        if (collisions and self.feet.collidelist(collisions) > -1) or self._collides_with_mobs(other_mobs):
             self.position.y = self.old_position.y
             self.rect.center    = self.position
             self.feet.midbottom = self.rect.midbottom
+            self._position_hitbox()
 
         if direction_vec.x < -0.1:
             self.set_direction('left')
@@ -189,8 +195,22 @@ class Mob(animation.AnimateSprite):
         else:
             self.rect.center = self.position
         self.feet.midbottom = self.rect.midbottom
+        self._position_hitbox()
 
     # ── Helpers d'animation ────────────────────────────────────────────────────
+
+    def _position_hitbox(self):
+        self.hitbox.center = self.position
+
+    def _collides_with_mobs(self, other_mobs):
+        if not other_mobs:
+            return False
+        for mob in other_mobs:
+            if mob is self or not mob.alive or mob.dead:
+                continue
+            if self.hitbox.colliderect(mob.hitbox):
+                return True
+        return False
 
     def _animate_frames(self, anim_key):
         """Joue une animation en boucle infinie."""

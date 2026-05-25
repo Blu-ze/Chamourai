@@ -1,5 +1,6 @@
 import pygame
 import sys
+import os
 from network import Network
 from player import Player
 from map import MapManager
@@ -7,6 +8,11 @@ from interface import Interface
 from player import MAX_HP
 from mob import ATTACK_RADIUS
 pygame.init()
+
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+def asset_path(relative_path):
+    return os.path.join(BASE_DIR, relative_path)
 
 win           = pygame.display.set_mode((1280, 720))
 pygame.display.set_caption("Chamouraï")
@@ -69,8 +75,38 @@ def draw_death_screen(surface):
     surface.blit(txt, txt.get_rect(center=(W // 2, H // 2 - 30)))
     surface.blit(sub, sub.get_rect(center=(W // 2, H // 2 + 55)))
 
+def load_parchment_image():
+    image = pygame.image.load(asset_path("assets/oldman/parchemin.png")).convert_alpha()
+    max_w = int(screen_size[0] * 0.8)
+    max_h = int(screen_size[1] * 0.85)
+    scale = min(max_w / image.get_width(), max_h / image.get_height())
+    new_size = (int(image.get_width() * scale), int(image.get_height() * scale))
+    return pygame.transform.smoothscale(image, new_size)
+
+def draw_parchment(surface, parchment):
+    overlay = pygame.Surface(surface.get_size(), pygame.SRCALPHA)
+    overlay.fill((0, 0, 0, 130))
+    surface.blit(overlay, (0, 0))
+    surface.blit(parchment, parchment.get_rect(center=surface.get_rect().center))
+
+def is_near_oldman(map_manager, player, interact_radius=80):
+    if not map_manager.oldman:
+        return False
+    return player.position.distance_to(map_manager.oldman.position) <= interact_radius
+
+def update_oldman_prompt(map_manager, player, parchment_open):
+    if not parchment_open and is_near_oldman(map_manager, player):
+        map_manager.ekey.show(
+            map_manager.oldman.position.x,
+            map_manager.oldman.position.y
+        )
+    else:
+        map_manager.ekey.hide()
+
 def run_game(network, spawn_data, player_index=0):
     map_manager = MapManager(screen_size)
+    parchment = load_parchment_image()
+    parchment_open = False
 
     my_skin = "player" if player_index == 0 else "player2"
     other_skin = "player2" if player_index == 0 else "player"
@@ -81,6 +117,7 @@ def run_game(network, spawn_data, player_index=0):
     map_manager.add_sprite(p,        layer=19)
     map_manager.add_sprite(p2,       layer=19)
     map_manager.add_sprite(p.weapon, layer=18)
+    map_manager.add_sprite(p2.weapon, layer=18)
 
     clock = pygame.time.Clock()
 
@@ -92,28 +129,25 @@ def run_game(network, spawn_data, player_index=0):
                 pygame.quit(); sys.exit()
             if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
                 return
-            if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+            if event.type == pygame.KEYDOWN and event.key == pygame.K_e:
+                if parchment_open or is_near_oldman(map_manager, p):
+                    parchment_open = not parchment_open
+            if not parchment_open and event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                 p.weapon.hit()
 
-        p.save_location()
+        if not parchment_open:
+            p.save_location()
         map_manager.render(win, (p.position.x, p.position.y))
-        p.move(map_manager)
-        map_manager.teleport_to_level_if_needed(
-            p,
-            [(p, 19), (p2, 19), (p.weapon, 18)]
-        )
-        # Détection proximité oldman
-        INTERACT_RADIUS = 80
-        dist_oldman = None
-        if map_manager.oldman:
-            dist_oldman = p.position.distance_to(map_manager.oldman.position)
-        if dist_oldman is not None and dist_oldman <= INTERACT_RADIUS:
-            map_manager.ekey.show(
-                map_manager.oldman.position.x,
-                map_manager.oldman.position.y
+
+        if not parchment_open:
+            p.move(map_manager)
+            map_manager.teleport_to_level_if_needed(
+                p,
+                [(p, 19), (p2, 19), (p.weapon, 18)]
             )
-        else:
-            map_manager.ekey.hide()
+
+        # Détection proximité oldman
+        update_oldman_prompt(map_manager, p, parchment_open)
 
         weapon_rect = None
         if p.weapon.hitbox:
@@ -125,8 +159,11 @@ def run_game(network, spawn_data, player_index=0):
             "y": p.position.y,
             "dir": p.direction,
             "state": p.state,
+            **p.get_dodge_state(),
             "hit": p.weapon.animation,
             "weapon_rect": weapon_rect,
+            "weapon_angle": p.weapon.angle,
+            "weapon_dir": p.weapon.direction,
             "skin": my_skin
         })
 
@@ -136,27 +173,43 @@ def run_game(network, spawn_data, player_index=0):
             p2.direction  = data["player"]["dir"]
             p2.state      = data["player"]["state"]
             p2.update()
+            p2.apply_remote_dodge_animation(
+                data["player"].get("dodging", False),
+                data["player"].get("dodge_frame", 0)
+            )
 
-            mob = map_manager.skeleton
-            if mob and "mob" in data:
-                mob.position.x = data["mob"]["x"]
-                mob.position.y = data["mob"]["y"]
-                mob.direction  = data["mob"]["dir"]
-                mob.state      = data["mob"]["state"]
-                mob.update()
+            other_data = data["player"]
+            p2.weapon.apply_remote(
+                x         = other_data["x"],
+                y         = other_data["y"],
+                angle     = other_data.get("weapon_angle", 0),
+                direction = other_data.get("weapon_dir", "right"),
+                animating = other_data.get("hit", False),
+            )
 
-        p2.update_animation()
+            mobs_data = data.get("mobs")
+            if mobs_data is None and "mob" in data:
+                mobs_data = [data["mob"]]
+            if mobs_data:
+                for mob, mob_data in zip(map_manager.mobs, mobs_data):
+                    server_hp = mob_data.get("hp", mob.hp)
+                    if server_hp < mob.hp:
+                        damage = mob.hp - server_hp
+                        mob.take_damage(damage)
+                    # Synchronise position/direction seulement si pas en animation prioritaire
+                    if not mob.dead and not mob.is_hit:
+                        mob.position.x = mob_data["x"]
+                        mob.position.y = mob_data["y"]
+                        mob.direction  = mob_data["dir"]
+                        mob.state      = mob_data["state"]
+                    mob.update()
         draw_health_bar(win, p.hp, MAX_HP)
 
         if not p.alive:
             draw_death_screen(win)
+        if parchment_open:
+            draw_parchment(win, parchment)
         pygame.display.update()
-
-        # Affichage PV du mob
-        if data and "mob" in data and map_manager.skeleton:
-            if not data["mob"].get("alive", True):
-                map_manager.skeleton.alive = False
-                map_manager.skeleton.kill()
 
 
 # ── Boucle principale ─────────────────────────────────────────────────────────
@@ -165,6 +218,8 @@ while True:
 
     if choice == "solo":
         map_manager = MapManager(screen_size)
+        parchment = load_parchment_image()
+        parchment_open = False
         p = Player(map_manager.spawn1.x, map_manager.spawn1.y, 130)
         map_manager.add_sprite(p, layer=19)
         map_manager.add_sprite(p.weapon, layer=18)
@@ -178,47 +233,47 @@ while True:
                     sys.exit()
                 if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
                     break
-                if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                if event.type == pygame.KEYDOWN and event.key == pygame.K_e:
+                    if parchment_open or is_near_oldman(map_manager, p):
+                        parchment_open = not parchment_open
+                if not parchment_open and event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                     p.weapon.hit()
             else:
-                p.save_location()
+                if not parchment_open:
+                    p.save_location()
                 map_manager.render(win, (p.position.x, p.position.y))
-                p.move(map_manager)
-                map_manager.teleport_to_level_if_needed(
-                    p,
-                    [(p, 19), (p.weapon, 18)]
-                )
-                # Détection proximité oldman
-                INTERACT_RADIUS = 80
-                dist_oldman = None
-                if map_manager.oldman:
-                    dist_oldman = p.position.distance_to(map_manager.oldman.position)
-                if dist_oldman is not None and dist_oldman <= INTERACT_RADIUS:
-                    map_manager.ekey.show(
-                        map_manager.oldman.position.x,
-                        map_manager.oldman.position.y
+                if not parchment_open:
+                    p.move(map_manager)
+                    map_manager.teleport_to_level_if_needed(
+                        p,
+                        [(p, 19), (p.weapon, 18)]
                     )
-                else:
-                    map_manager.ekey.hide()
+                # Détection proximité oldman
+                update_oldman_prompt(map_manager, p, parchment_open)
 
                 now = pygame.time.get_ticks()
-                if map_manager.skeleton:
-                    map_manager.skeleton.update_ai(p.position, map_manager.collisions, now)
-                    map_manager.skeleton.update()
+                for mob in map_manager.mobs:
+                    mob.update_ai(p.position, map_manager.collisions, now, map_manager.mobs)
+                    mob.update()
                 # Coup du mob sur le joueur (solo) : seulement sur la frame de coup
-                if p.alive and map_manager.skeleton and map_manager.skeleton.is_attack_hit_frame :
-                    if map_manager.skeleton.position.distance_to(p.position) <= ATTACK_RADIUS:
-                        p.take_damage(1)
+                for mob in map_manager.mobs:
+                    if p.alive and mob.is_attack_hit_frame:
+                        if mob.position.distance_to(p.position) <= ATTACK_RADIUS:
+                            p.take_damage(1)
+                            break
 
                 # Détection de coup
-                if p.weapon.hitbox and map_manager.skeleton and map_manager.skeleton.alive:
-                    if p.weapon.hitbox.colliderect(map_manager.skeleton.rect):
-                        map_manager.skeleton.take_damage(1)
+                if p.weapon.hitbox:
+                    for mob in map_manager.mobs:
+                        if mob.alive and p.weapon.hitbox.colliderect(mob.hitbox):
+                            mob.take_damage(1)
 
                 draw_health_bar(win, p.hp, MAX_HP)
 
                 if not p.alive:
                     draw_death_screen(win)
+                if parchment_open:
+                    draw_parchment(win, parchment)
                 pygame.display.update()
                 continue
             break
