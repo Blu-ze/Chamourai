@@ -3,7 +3,7 @@ import animation
 from weapon import Weapon
 
 class Player(animation.AnimateSprite):
-    def __init__(self, x, y, animation_speed):
+    def __init__(self, x, y, animation_speed, interface=None):
         super().__init__('player', animation_speed)
         self.position = pygame.math.Vector2(x, y)
         self.old_position = self.position.copy()
@@ -11,6 +11,9 @@ class Player(animation.AnimateSprite):
         self.state = "idle"
         self.feet = pygame.Rect(0, 0, self.rect.width * 0.5, 20)
         self.weapon = Weapon('katana', x, y, 35)
+        self.interface = interface
+        self._last_walk_sound = 0
+        self._walk_sound_delay = 400  # ms entre chaque son de pas
 
     def save_location(self):
         self.old_position = self.position.copy()
@@ -24,6 +27,7 @@ class Player(animation.AnimateSprite):
     def move(self, map_manager):
         keys = pygame.key.get_pressed()
         moving = False
+        now = pygame.time.get_ticks()
 
         # Axe X
         if keys[pygame.K_q]:
@@ -65,6 +69,11 @@ class Player(animation.AnimateSprite):
 
         if moving:
             self.state = "walk"
+            # Jouer le son de marche
+            if self.interface and 'walk' in self.interface.sounds:
+                if now - self._last_walk_sound > self._walk_sound_delay:
+                    self.interface.sounds['walk'].play()
+                    self._last_walk_sound = now
         else:
             self.state = "idle"
             self.current_image = 0

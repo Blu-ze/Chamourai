@@ -142,7 +142,7 @@ class Mob(animation.AnimateSprite):
         else:
             self.image = raw_frame
 
-    def take_damage(self, amount=1):
+    def take_damage(self, amount=1, interface=None):
         if not self.alive:
             return
         self.hp -= amount
@@ -152,4 +152,7 @@ class Mob(animation.AnimateSprite):
         if self.hp <= 0:
             self.hp = 0
             self.alive = False
+            # Jouer le son de mort
+            if interface and 'kill' in interface.sounds:
+                interface.sounds['kill'].play()
             self.kill()  # retire le sprite du groupe pyscroll

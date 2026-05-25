@@ -193,7 +193,28 @@ class Interface:
         self.font_code   = pygame.font.Font(None, 100)
         self.font_small  = pygame.font.Font(None, 28)
         self.volume = 0.5
-        pygame.mixer.music.set_volume(self.volume)
+        self.sfx_volume = 0.7
+
+        # Sons d'effets
+        self.sounds = {}
+        try:
+            self.sounds['slash'] = pygame.mixer.Sound(asset_path('sounds/slash.ogg'))
+            self.sounds['walk'] = pygame.mixer.Sound(asset_path('sounds/walk.wav'))
+            self.sounds['dash'] = pygame.mixer.Sound(asset_path('sounds/dash.wav'))
+            self.sounds['kill'] = pygame.mixer.Sound(asset_path('sounds/kill.wav'))
+
+            # Appliquer le volume SFX
+            for sound in self.sounds.values():
+                sound.set_volume(self.sfx_volume)
+        except Exception as e:
+            print(f"[SFX] Erreur chargement sons: {e}")
+
+        try:
+            pygame.mixer.music.load(asset_path('sounds/ambiance.mp3'))
+            pygame.mixer.music.set_volume(self.volume)
+            pygame.mixer.music.play(-1)  # -1 = boucle infinie
+        except Exception as e:
+            print(f"[Musique] Impossible de charger sounds/ambiance.mp3 : {e}")
 
         bw2, bh2 = 200, 55
         cx2 = (W - bw2) // 2
@@ -424,6 +445,366 @@ class Interface:
             pygame.display.flip()
 
         return result[0]
+
+    def run_enter_ip(self):
+        clock = pygame.time.Clock()
+        W, H = self.screen_size
+        ip_text = ""
+        confirm = Button("Confirmer", W // 2 - 150, H // 2 + 100, 300, 55, (70, 130, 240), (90, 150, 255))
+        error = ""
+
+        while True:
+            clicked = False
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit();
+                    sys.exit()
+                if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                    clicked = True
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_BACKSPACE:
+                        ip_text = ip_text[:-1]
+                    elif len(ip_text) < 15 and (event.unicode.isdigit() or event.unicode == '.'):
+                        ip_text += event.unicode
+
+            mouse = pygame.mouse.get_pos()
+            self._draw_bg()
+            self._draw_text("IP du serveur (hôte)", self.font_normal, (255, 255, 255), (W // 2, H // 2 - 80))
+            ip_surf = self.font_code.render(ip_text or "_", True, (255, 220, 50))
+            self.screen.blit(ip_surf, ip_surf.get_rect(center=(W // 2, H // 2)))
+            confirm.check_hover(mouse)
+            confirm.draw(self.screen)
+            if error:
+                self._draw_text(error, self.font_small, (255, 80, 80), (W // 2, H // 2 + 180))
+            if confirm.is_clicked(mouse, clicked):
+                parts = ip_text.split('.')
+                if len(parts) == 4 and all(p.isdigit() and 0 <= int(p) <= 255 for p in parts):
+                    return ip_text
+                else:
+                    error = "IP invalide (ex: 192.168.1.10)"
+
+            pygame.display.flip()
+            clock.tick(60)
+
+    def run_options(self):
+        clock = pygame.time.Clock()
+        W, H = self.screen_size
+
+        # Boutons pour SFX
+        bw2, bh2 = 200, 55
+        cx2 = (W - bw2) // 2
+        sfx_buttons = [
+            Button("- SFX ", cx2 - 110, H // 2 + 120, bw2, bh2, (70, 130, 240), (90, 150, 255)),
+            Button("+ SFX ", cx2 + 110, H // 2 + 120, bw2, bh2, (70, 130, 240), (90, 150, 255)),
+        ]
+
+        while True:
+            clicked = False
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    sys.exit()
+                if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                    clicked = True
+
+            mouse = pygame.mouse.get_pos()
+            self._draw_bg()
+            self._draw_text("Options ", self.font_title, (255, 255, 255), (W // 2, H // 2 - 200))
+
+            # Volume musique
+            self._draw_text(f"Volume Musique : {int(self.volume * 100)}% ", self.font_normal, (255, 220, 50),
+                            (W // 2, H // 2 - 100))
+            bar_w = 400
+            bar_h = 20
+            bar_x = W // 2 - bar_w // 2
+            bar_y = H // 2 - 50
+            pygame.draw.rect(self.screen, (80, 80, 80), (bar_x, bar_y, bar_w, bar_h), border_radius=8)
+            pygame.draw.rect(self.screen, (70, 180, 255), (bar_x, bar_y, int(bar_w * self.volume), bar_h),
+                             border_radius=8)
+
+            # Volume SFX
+            self._draw_text(f"Volume Effets : {int(self.sfx_volume * 100)}% ", self.font_normal, (255, 220, 50),
+                            (W // 2, H // 2 + 20))
+            sfx_bar_y = H // 2 + 70
+            pygame.draw.rect(self.screen, (80, 80, 80), (bar_x, sfx_bar_y, bar_w, bar_h), border_radius=8)
+            pygame.draw.rect(self.screen, (255, 180, 70), (bar_x, sfx_bar_y, int(bar_w * self.sfx_volume), bar_h),
+                             border_radius=8)
+        for btn in self.options_buttons:
+            btn.check_hover(mouse)
+            btn.draw(self.screen)
+            if btn.is_clicked(mouse, clicked):
+                if btn.text == "+ Volume ":
+                    self.volume = min(1.0, self.volume + 0.1)
+                    pygame.mixer.music.set_volume(self.volume)
+                elif btn.text == "- Volume ":
+                    self.volume = max(0.0, self.volume - 0.1)
+                    pygame.mixer.music.set_volume(self.volume)
+                elif btn.text == "Retour ":
+                    return
+
+        for btn in sfx_buttons:
+            btn.check_hover(mouse)
+            btn.draw(self.screen)
+            if btn.is_clicked(mouse, clicked):
+                if btn.text == "+ SFX ":
+                    self.sfx_volume = min(1.0, self.sfx_volume + 0.1)
+                    for sound in self.sounds.values():
+                        sound.set_volume(self.sfx_volume)
+                elif btn.text == "- SFX ":
+                    self.sfx_volume = max(0.0, self.sfx_volume - 0.1)
+                    for sound in self.sounds.values():
+                        sound.set_volume(self.sfx_volume)
+
+        pygame.display.flip()
+        clock.tick(60)
+
+    def run_create_salon(self, network):
+        import threading
+
+        clock = pygame.time.Clock()
+        W, H = self.screen_size
+        import socket
+        local_ip = socket.gethostbyname(socket.gethostname())
+        result = network.create_salon()
+
+        if result.get("status") != "ok":
+            return None
+
+        code = result["code"]
+        start_btn = Button("Lancer la partie", W // 2 - 150, H // 2 + 120, 300, 55, (70, 200, 70), (90, 220, 90))
+        guest_ready = [False]  # liste pour pouvoir modifier depuis le thread
+
+        def check_guest():
+            while not guest_ready[0]:
+                try:
+                    ping = network.ping()
+                    if ping.get("guest_connected", False):
+                        guest_ready[0] = True
+                        return
+                except:
+                    return
+                pygame.time.wait(500)  # vérifie toutes les 500ms
+
+        # Lancer le ping dans un thread séparé
+        threading.Thread(target=check_guest, daemon=True).start()
+
+        while True:
+            clicked = False
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit();
+                    sys.exit()
+                if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                    clicked = True
+
+            mouse = pygame.mouse.get_pos()
+            self._draw_bg()
+            self._draw_text("Votre code de salon", self.font_normal, (200, 200, 200), (W // 2, H // 2 - 100))
+            self._draw_text(code, self.font_code, (255, 220, 50), (W // 2, H // 2))
+            self._draw_text(f"Votre IP : {local_ip}", self.font_small, (180, 255, 180), (W // 2, H // 2 + 35))
+
+            if guest_ready[0]:
+                self._draw_text("Joueur 2 connecté !", self.font_normal, (100, 255, 100), (W // 2, H // 2 + 70))
+                start_btn.check_hover(mouse)
+                start_btn.draw(self.screen)
+                if start_btn.is_clicked(mouse, clicked):
+                    spawn = network.start_game()
+                    return spawn
+            else:
+                self._draw_text("En attente du joueur 2...", self.font_normal, (180, 180, 180), (W // 2, H // 2 + 70))
+
+            pygame.display.flip()
+            clock.tick(60)
+
+    def run_join_salon(self, network):
+        import threading
+        clock = pygame.time.Clock()
+        W, H = self.screen_size
+        box = InputBox(W // 2 - 100, H // 2, 200, 70)
+        confirm = Button("Rejoindre", W // 2 - 150, H // 2 + 100, 300, 55, (70, 130, 240), (90, 150, 255))
+        error = ""
+        success = ""
+
+        while True:
+            clicked = False
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit();
+                    sys.exit()
+                if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                    clicked = True
+                box.handle_event(event)
+
+            mouse = pygame.mouse.get_pos()
+            self._draw_bg()
+            self._draw_text("Entrez le code du salon", self.font_normal, (255, 255, 255), (W // 2, H // 2 - 80))
+            box.draw(self.screen)
+            confirm.check_hover(mouse)
+            confirm.draw(self.screen)
+
+            if error:
+                self._draw_text(error, self.font_small, (255, 80, 80), (W // 2, H // 2 + 180))
+            if success:
+                self._draw_text(success, self.font_normal, (100, 255, 100), (W // 2, H // 2 + 180))
+                return {"status": "ok"}
+
+            if confirm.is_clicked(mouse, clicked):
+                if len(box.text) == 4:
+                    result = network.join_salon(box.text)
+                    if result.get("status") == "ok":
+                        success = f"Salon {box.text} rejoint ! En attente de l'hôte..."
+                    else:
+                        error = result.get("msg", "Code invalide")
+                        box.text = ""
+                else:
+                    error = "Le code doit contenir 4 chiffres"
+
+            pygame.display.flip()
+            clock.tick(60)
+
+    def run_waiting_for_host(self, network):
+        """Affiche un écran d'attente pendant que le guest attend le START de l'hôte."""
+        import threading
+        clock = pygame.time.Clock()
+        W, H = self.screen_size
+        result = [None]
+        received = [False]
+
+        def wait_for_start():
+            try:
+                result[0] = network.recv_raw()
+                received[0] = True
+            except:
+                received[0] = True
+
+        threading.Thread(target=wait_for_start, daemon=True).start()
+
+        dots = 0
+        timer = 0
+        while not received[0]:
+            clock.tick(60)
+            timer += 1
+            if timer % 30 == 0:
+                dots = (dots + 1) % 4
+
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit();
+                    sys.exit()
+
+            self._draw_bg()
+            self._draw_text(
+                "En attente du lancement par l'hôte" + "." * dots,
+                self.font_normal, (200, 200, 200), (W // 2, H // 2)
+            )
+            pygame.display.flip()
+
+        return result[0]
+
+    def run_pause_menu(self, surface):
+        """
+        Affiche le menu pause par-dessus le jeu.
+        Retourne : "resume" | "menu"
+        """
+        W, H = self.screen_size
+        clock = pygame.time.Clock()
+
+        bw, bh = 280, 55
+        cx = (W - bw) // 2
+        btn_resume = Button("Reprendre", cx, H // 2 + 20, bw, bh, (60, 160, 60), (80, 200, 80))
+        btn_menu = Button("Menu principal", cx, H // 2 + 95, bw, bh, (180, 60, 60), (220, 80, 80))
+
+        try:
+            volume = pygame.mixer.music.get_volume()
+        except Exception:
+            volume = 1.0
+
+        slider_x = cx
+        slider_y = H // 2 - 60
+        slider_w = bw
+        slider_h = 8
+        knob_r = 11
+        dragging = False
+
+        font_title = pygame.font.Font(None, 72)
+        font_label = pygame.font.Font(None, 30)
+
+        while True:
+            clicked = False
+            mouse = pygame.mouse.get_pos()
+            mx, my = mouse
+
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit();
+                    sys.exit()
+                if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
+                    return "resume"
+                if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                    clicked = True
+                    knob_cx = slider_x + int(volume * slider_w)
+                    if math.hypot(mx - knob_cx, my - (slider_y + slider_h // 2)) <= knob_r + 4:
+                        dragging = True
+                if event.type == pygame.MOUSEBUTTONUP and event.button == 1:
+                    dragging = False
+                if event.type == pygame.MOUSEMOTION and dragging:
+                    volume = max(0.0, min(1.0, (mx - slider_x) / slider_w))
+                    try:
+                        pygame.mixer.music.set_volume(volume)
+                    except Exception:
+                        pass
+
+            # Fond semi-transparent
+            overlay = pygame.Surface((W, H), pygame.SRCALPHA)
+            overlay.fill((10, 10, 20, 175))
+            surface.blit(overlay, (0, 0))
+
+            # Panneau central
+            panel_w, panel_h = 360, 310
+            panel_x = (W - panel_w) // 2
+            panel_y = H // 2 - 155
+            panel = pygame.Surface((panel_w, panel_h), pygame.SRCALPHA)
+            panel.fill((20, 22, 40, 220))
+            pygame.draw.rect(panel, (90, 130, 255, 120), (0, 0, panel_w, panel_h), 2, border_radius=14)
+            surface.blit(panel, (panel_x, panel_y))
+
+            # Titre
+            txt = font_title.render("PAUSE", True, (220, 220, 255))
+            surface.blit(txt, txt.get_rect(center=(W // 2, panel_y + 52)))
+
+            # Label volume
+            label = font_label.render(f"Volume  {int(volume * 100):3d}%", True, (190, 190, 230))
+            surface.blit(label, label.get_rect(center=(W // 2, slider_y - 18)))
+
+            # Track
+            pygame.draw.rect(surface, (50, 50, 80),
+                             pygame.Rect(slider_x, slider_y, slider_w, slider_h), border_radius=4)
+
+            # Remplissage
+            fill_w = int(volume * slider_w)
+            if fill_w > 0:
+                fill_col = (int(80 + 120 * volume), int(130 + 50 * (1 - volume)), 220)
+                pygame.draw.rect(surface, fill_col,
+                                 pygame.Rect(slider_x, slider_y, fill_w, slider_h), border_radius=4)
+
+            # Knob
+            knob_cx = slider_x + fill_w
+            knob_cy = slider_y + slider_h // 2
+            pygame.draw.circle(surface, (200, 210, 255), (knob_cx, knob_cy), knob_r)
+            pygame.draw.circle(surface, (100, 120, 255), (knob_cx, knob_cy), knob_r, 2)
+
+            # Boutons
+            for btn in (btn_resume, btn_menu):
+                btn.check_hover(mouse)
+                btn.draw(surface)
+                if btn.is_clicked(mouse, clicked):
+                    if btn.text == "Reprendre":
+                        return "resume"
+                    elif btn.text == "Menu principal":
+                        return "menu"
+
+            pygame.display.flip()
+            clock.tick(60)
 
     def run_enter_ip(self):
         clock = pygame.time.Clock()

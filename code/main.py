@@ -33,7 +33,9 @@ def run_game(network, spawn_data, player_index=0):
             if event.type == pygame.QUIT:
                 pygame.quit(); sys.exit()
             if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
-                return
+                action = interface.run_pause_menu(win)
+                if action == "menu":
+                    return
             if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                 p.weapon.hit()
 
@@ -97,7 +99,9 @@ while True:
                     pygame.quit();
                     sys.exit()
                 if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
-                    break
+                    action = interface.run_pause_menu(win)
+                    if action == "menu":
+                        break
                 if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                     p.weapon.hit()
             else:
@@ -152,3 +156,41 @@ while True:
                     network.send_raw({"status": "ready"})
 
                     run_game(network, start_msg["spawn"], player_index=1)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
