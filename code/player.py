@@ -88,6 +88,12 @@ class Player(animation.AnimateSprite):
             return
 
         keys   = pygame.key.get_pressed()
+
+        # Declenche l'esquive avant d'appliquer un deplacement classique.
+        if keys[pygame.K_SPACE] and now - self._dodge_used_ms >= DODGE_COOLDOWN:
+            self._start_dodge(now, map_manager)
+            return
+
         moving = False
 
         # Axe X
@@ -134,11 +140,7 @@ class Player(animation.AnimateSprite):
             self.state = "idle"
             self.current_image = 0
 
-        # ── Déclenchement de l'esquive ────────────────────────────────────────
-        if keys[pygame.K_SPACE] and now - self._dodge_used_ms >= DODGE_COOLDOWN:
-            self._start_dodge(now, map_manager)
-            return
-
+        # Mise a jour de l'arme
         self.weapon.move(self.position.x, self.position.y)
         new_direction = self.weapon.rotate(self.position, map_manager)
         self.set_direction(new_direction)
