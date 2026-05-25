@@ -100,6 +100,21 @@ class MapManager:
             if obj.name == "teleport" or obj.type == "teleport":
                 self.teleports.append(pygame.Rect(obj.x, obj.y, obj.width, obj.height))
 
+        # Collisions peintes directement dans le calque de tuiles Walls.
+        for layer in self.tmx_data.layers:
+            if getattr(layer, "name", None) != "Walls":
+                continue
+            for x, y, gid in layer:
+                if gid:
+                    self.collisions.append(
+                        pygame.Rect(
+                            x * self.tmx_data.tilewidth,
+                            y * self.tmx_data.tileheight,
+                            self.tmx_data.tilewidth,
+                            self.tmx_data.tileheight
+                        )
+                    )
+
         # Mob affiché côté client (pas d'IA, juste le rendu)
         self.skeleton = None
         if self.mob_spawn:
