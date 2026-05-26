@@ -2,7 +2,7 @@ import pygame
 import sys
 import os
 from network import Network
-from player import Player, MAX_HP, PLAYER_DAMAGE
+from player import Player, MAX_HP
 from map import MapManager
 from interface import Interface
 pygame.init()
@@ -161,6 +161,16 @@ def draw_key_inventory(surface, map_manager, player):
         if index < player.key_count:
             surface.blit(KEY_ICON, KEY_ICON.get_rect(center=rect.center))
 
+def draw_god_mode_indicator(surface, player):
+    if not player.god_mode:
+        return
+    font = pygame.font.Font(None, 30)
+    label = font.render("GOD MODE", True, (255, 236, 121))
+    rect = label.get_rect(topleft=(20, 20)).inflate(18, 12)
+    pygame.draw.rect(surface, (24, 24, 20), rect, border_radius=5)
+    pygame.draw.rect(surface, (219, 173, 48), rect, width=2, border_radius=5)
+    surface.blit(label, label.get_rect(center=rect.center))
+
 def draw_teleport_waiting_message(surface, map_manager, players):
     if map_manager.current_map != "spawn":
         return
@@ -221,6 +231,9 @@ def run_game(network, spawn_data, player_index=0):
                 pygame.quit(); sys.exit()
             if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
                 return
+            if event.type == pygame.KEYDOWN and event.key == pygame.K_a and event.mod & pygame.KMOD_CTRL:
+                p.toggle_god_mode()
+                continue
             if victory:
                 if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                     if victory_button_rect(win).collidepoint(event.pos):
@@ -267,7 +280,8 @@ def run_game(network, spawn_data, player_index=0):
             "skin": my_skin,
             "grid_open": map_manager.grid_open,
             "current_map": map_manager.current_map,
-            "collected_keys": list(p.collected_keys)
+            "collected_keys": list(p.collected_keys),
+            "god_mode": p.god_mode
         })
 
         if data and "player" in data:
@@ -345,6 +359,7 @@ def run_game(network, spawn_data, player_index=0):
         if map_open:
             map_manager.draw_level_map(win, p)
         draw_key_inventory(win, map_manager, p)
+        draw_god_mode_indicator(win, p)
 
         if not p.alive:
             draw_death_screen(win)
@@ -378,6 +393,9 @@ while True:
                     sys.exit()
                 if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
                     break
+                if event.type == pygame.KEYDOWN and event.key == pygame.K_a and event.mod & pygame.KMOD_CTRL:
+                    p.toggle_god_mode()
+                    continue
                 if victory:
                     if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                         if victory_button_rect(win).collidepoint(event.pos):
@@ -427,7 +445,7 @@ while True:
                     if p.weapon.hitbox:
                         for mob in map_manager.mobs:
                             if mob.alive and p.weapon.hitbox.colliderect(mob.hitbox):
-                                mob.take_damage(PLAYER_DAMAGE)
+                                mob.take_damage(p.damage)
 
                     map_manager.update_progression(p)
                 victory = map_manager.is_victory_ready()
@@ -436,6 +454,7 @@ while True:
                 if map_open:
                     map_manager.draw_level_map(win, p)
                 draw_key_inventory(win, map_manager, p)
+                draw_god_mode_indicator(win, p)
 
                 if not p.alive:
                     draw_death_screen(win)

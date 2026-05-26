@@ -7,7 +7,7 @@ import os
 import threading
 import random
 from mob import Mob
-from player import PLAYER_DAMAGE
+from player import PLAYER_DAMAGE, GOD_MODE_DAMAGE
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -342,6 +342,7 @@ def threaded_client(conn):
                 new_attack = attack_id != salon["last_attack_ids"][player_index]
                 if data.get("hit") and new_attack and skeletons:
                     salon["last_attack_ids"][player_index] = attack_id
+                    player_damage = GOD_MODE_DAMAGE if data.get("god_mode") else PLAYER_DAMAGE
                     weapon_rect = data.get("weapon_rect")
                     if weapon_rect:
                         wr = pygame.Rect(weapon_rect)
@@ -349,7 +350,7 @@ def threaded_client(conn):
                             if not skeleton.alive:
                                 continue
                             if wr.colliderect(skeleton.hitbox):
-                                skeleton.take_damage(PLAYER_DAMAGE)
+                                skeleton.take_damage(player_damage)
                                 mobs[index] = mob_to_dict(skeleton)
                                 salon["mobs"] = mobs
                                 salon["mob"] = mobs[0] if mobs else None
