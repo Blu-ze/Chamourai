@@ -209,7 +209,7 @@ class Interface:
             for sound in self.sounds.values():
                 sound.set_volume(self.sfx_volume)
             self.sounds['dash'].set_volume(1.0)
-            self.sounds['walk_grass'].set_volume(0.2)
+            self.sounds['walk_grass'].set_volume(0.4)
             self.sounds['walk2'].set_volume(0.5)
             self.sounds['kill'].set_volume(0.2)
             self.sounds['slash'].set_volume(0.2)
