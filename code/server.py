@@ -6,6 +6,7 @@ import pygame
 import os
 import threading
 import random
+import struct
 from mob import Mob
 from player import PLAYER_DAMAGE, GOD_MODE_DAMAGE
 
@@ -15,6 +16,28 @@ def map_path(relative_path):
     return os.path.join(BASE_DIR, relative_path)
 
 pygame.init()
+
+def recv_packet(conn):
+    header = recv_exact(conn, 4)
+    size = struct.unpack("!I", header)[0]
+    return pickle.loads(recv_exact(conn, size))
+
+
+def recv_exact(conn, size):
+    chunks = []
+    remaining = size
+    while remaining:
+        chunk = conn.recv(remaining)
+        if not chunk:
+            raise ConnectionError("Connexion client interrompue.")
+        chunks.append(chunk)
+        remaining -= len(chunk)
+    return b"".join(chunks)
+
+
+def send_packet(conn, data):
+    payload = pickle.dumps(data)
+    conn.sendall(struct.pack("!I", len(payload)) + payload)
 
 def get_optional_object(tmx_data, name):
     try:
@@ -217,7 +240,7 @@ def mob_loop(code):
 
 def threaded_client(conn):
     try:
-        action = pickle.loads(conn.recv(2048))
+        action = recv_packet(conn)
 
         if action == "CREATE":
             with salons_lock:
@@ -239,7 +262,7 @@ def threaded_client(conn):
                     "collected_keys": set(),
                     "host_conn": conn
                 }
-            conn.sendall(pickle.dumps({"status": "ok", "code": code, "player": 0}))
+            send_packet(conn, {"status": "ok", "code": code, "player": 0})
             print(f"Salon {code} créé")
 
             # Attendre que le guest rejoigne
@@ -255,7 +278,7 @@ def threaded_client(conn):
             # Attendre START de l'hôte
             while True:
                 try:
-                    msg = pickle.loads(conn.recv(2048))
+                    msg = recv_packet(conn)
                     if msg == "START":
                         with salons_lock:
                             salons[code]["started"] = True
@@ -266,21 +289,21 @@ def threaded_client(conn):
                             guest_conn = salons[code]["players"][1]
 
                         # Envoyer spawn aux deux joueurs
-                        guest_conn.sendall(pickle.dumps({
+                        send_packet(guest_conn, {
                             "status": "start",
                             "spawn":  salons[code]["states"][1]
-                        }))
-                        conn.sendall(pickle.dumps({
+                        })
+                        send_packet(conn, {
                             "status": "start",
                             "spawn":  salons[code]["states"][0]
-                        }))
+                        })
                         start_new_thread(mob_loop, (code,))
                         break
 
                     elif msg == "PING":
                         with salons_lock:
                             guest_connected = salons[code]["players"][1] is not None
-                        conn.sendall(pickle.dumps({"guest_connected": guest_connected}))
+                        send_packet(conn, {"guest_connected": guest_connected})
                 except:
                     return
 
@@ -290,19 +313,17 @@ def threaded_client(conn):
             code = action["code"]
             with salons_lock:
                 if code not in salons:
-                    conn.sendall(pickle.dumps({"status": "error", "msg": "Code invalide"}))
+                    send_packet(conn, {"status": "error", "msg": "Code invalide"})
                     return
                 if salons[code]["players"][1] is not None:
-                    conn.sendall(pickle.dumps({"status": "error", "msg": "Salon plein"}))
+                    send_packet(conn, {"status": "error", "msg": "Salon plein"})
                     return
                 salons[code]["players"][1] = conn
-            conn.sendall(pickle.dumps({"status": "ok", "player": 1}))
+            send_packet(conn, {"status": "ok", "player": 1})
             print(f"Joueur 2 rejoint le salon {code}")
 
             # Attendre le START (envoyé directement par le thread hôte)
-            start_msg = pickle.loads(conn.recv(2048))
-            # Renvoyer confirmation
-            conn.sendall(pickle.dumps({"status": "ready"}))
+            start_msg = recv_packet(conn)
 
             player_index = 1
             # start_msg contient déjà {"status": "start", "spawn": {...}}
@@ -313,7 +334,7 @@ def threaded_client(conn):
 
         # ── Boucle de jeu ────────────────────────────────────────────────────
         while True:
-            data = pickle.loads(conn.recv(2048))
+            data = recv_packet(conn)
             if not data:
                 break
 
@@ -366,7 +387,7 @@ def threaded_client(conn):
                 "grid_open": grid_open,
                 "collected_keys": collected_keys,
             }
-            conn.sendall(pickle.dumps(reply))
+            send_packet(conn, reply)
 
     except Exception as e:
         print(f"Erreur client : {e}")
