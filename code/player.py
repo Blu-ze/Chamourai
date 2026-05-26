@@ -2,8 +2,8 @@ import pygame
 import animation
 from weapon import Weapon
 
-MAX_HP         = 50
-PLAYER_DAMAGE  = 2
+MAX_HP         = 70
+PLAYER_DAMAGE  = 2.5
 PLAYER_SPEED   = 4
 INVINCIBLE_MODE_DAMAGE = 10
 INVINCIBLE_MODE_SPEED = 10
