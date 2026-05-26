@@ -23,12 +23,14 @@ class Weapon(animation.AnimateSprite):
         )
 
         self.angle = 0
+        self.attack_id = 0
 
     def move(self, x, y):
         self.position = pygame.math.Vector2(x, y)
 
     def hit(self):
         if not self.animation:  # on ne relance que si l'animation est terminée
+            self.attack_id += 1
             self.start_animation()
 
     def update(self):

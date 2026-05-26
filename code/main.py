@@ -2,11 +2,9 @@ import pygame
 import sys
 import os
 from network import Network
-from player import Player
+from player import Player, MAX_HP
 from map import MapManager
 from interface import Interface
-from player import MAX_HP
-from mob import ATTACK_RADIUS
 pygame.init()
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -19,6 +17,10 @@ pygame.display.set_caption("Chamouraï")
 
 screen_size = (1280, 720)
 interface   = Interface(screen_size, win)
+KEY_ICON = pygame.transform.scale(
+    pygame.image.load(asset_path("assets/key/key.png")).convert_alpha(),
+    (44, 24)
+)
 
 
 def draw_health_bar(surface, hp, max_hp):
@@ -75,6 +77,32 @@ def draw_death_screen(surface):
     surface.blit(txt, txt.get_rect(center=(W // 2, H // 2 - 30)))
     surface.blit(sub, sub.get_rect(center=(W // 2, H // 2 + 55)))
 
+def victory_button_rect(surface):
+    return pygame.Rect(0, 0, 280, 56).move(
+        surface.get_width() // 2 - 140,
+        surface.get_height() // 2 + 72
+    )
+
+def draw_victory_screen(surface):
+    overlay = pygame.Surface(surface.get_size(), pygame.SRCALPHA)
+    overlay.fill((0, 0, 0, 165))
+    surface.blit(overlay, (0, 0))
+
+    title_font = pygame.font.Font(None, 104)
+    subtitle_font = pygame.font.Font(None, 38)
+    button_font = pygame.font.Font(None, 31)
+    title = title_font.render("VICTOIRE", True, (232, 190, 65))
+    subtitle = subtitle_font.render("Le golem est vaincu", True, (242, 239, 229))
+    button = victory_button_rect(surface)
+    hovered = button.collidepoint(pygame.mouse.get_pos())
+    pygame.draw.rect(surface, (176, 133, 41) if hovered else (132, 99, 33), button, border_radius=6)
+    pygame.draw.rect(surface, (238, 202, 102), button, width=2, border_radius=6)
+    label = button_font.render("Retour au menu principal", True, (255, 252, 242))
+
+    surface.blit(title, title.get_rect(center=(surface.get_width() // 2, surface.get_height() // 2 - 68)))
+    surface.blit(subtitle, subtitle.get_rect(center=(surface.get_width() // 2, surface.get_height() // 2 + 5)))
+    surface.blit(label, label.get_rect(center=button.center))
+
 def load_parchment_image():
     image = pygame.image.load(asset_path("assets/oldman/parchemin.png")).convert_alpha()
     max_w = int(screen_size[0] * 0.8)
@@ -103,10 +131,83 @@ def update_oldman_prompt(map_manager, player, parchment_open):
     else:
         map_manager.ekey.hide()
 
+def draw_grid_message(surface, map_manager, player):
+    if not map_manager.is_near_grid(player):
+        return
+    if player.key_count >= 2:
+        message = "Appuyez sur E pour ouvrir la grille"
+    else:
+        message = f"Il faut 2 cles pour ouvrir la grille ({player.key_count}/2)"
+    font = pygame.font.Font(None, 34)
+    text = font.render(message, True, (255, 255, 255))
+    padding = 12
+    box = text.get_rect(center=(surface.get_width() // 2, surface.get_height() - 88))
+    background = box.inflate(padding * 2, padding * 2)
+    pygame.draw.rect(surface, (20, 20, 22), background, border_radius=6)
+    pygame.draw.rect(surface, (174, 144, 52), background, width=2, border_radius=6)
+    surface.blit(text, box)
+
+def draw_key_inventory(surface, map_manager, player):
+    if map_manager.current_map != "level":
+        return
+
+    slot_w, slot_h = 58, 42
+    start_x = surface.get_width() - (slot_w * 2) - 28
+    y = 20
+    for index in range(2):
+        rect = pygame.Rect(start_x + index * slot_w, y, slot_w - 8, slot_h)
+        pygame.draw.rect(surface, (22, 24, 28), rect, border_radius=6)
+        pygame.draw.rect(surface, (112, 115, 111), rect, width=2, border_radius=6)
+        if index < player.key_count:
+            surface.blit(KEY_ICON, KEY_ICON.get_rect(center=rect.center))
+
+def draw_god_mode_indicator(surface, player):
+    if not player.god_mode:
+        return
+    font = pygame.font.Font(None, 30)
+    label = font.render("GOD MODE", True, (255, 236, 121))
+    rect = label.get_rect(topleft=(20, 20)).inflate(18, 12)
+    pygame.draw.rect(surface, (24, 24, 20), rect, border_radius=5)
+    pygame.draw.rect(surface, (219, 173, 48), rect, width=2, border_radius=5)
+    surface.blit(label, label.get_rect(center=rect.center))
+
+def draw_teleport_waiting_message(surface, map_manager, players):
+    if map_manager.current_map != "spawn":
+        return
+    players_on_teleport = sum(map_manager.is_on_teleport(player) for player in players)
+    if players_on_teleport != 1:
+        return
+    font = pygame.font.Font(None, 36)
+    text = font.render("En attente du 2eme joueur", True, (255, 255, 255))
+    box = text.get_rect(center=(surface.get_width() // 2, surface.get_height() - 76))
+    background = box.inflate(28, 20)
+    pygame.draw.rect(surface, (20, 20, 22), background, border_radius=6)
+    pygame.draw.rect(surface, (174, 144, 52), background, width=2, border_radius=6)
+    surface.blit(text, box)
+
+def update_mob_projectiles(map_manager, player):
+    for mob in map_manager.mobs:
+        active_projectiles = []
+        for projectile in mob.projectiles:
+            if not projectile.active:
+                continue
+            if not projectile._added_to_group:
+                map_manager.add_sprite(projectile, layer=18)
+                projectile._added_to_group = True
+            projectile.update(map_manager.collisions)
+            if projectile.active and player.alive and projectile.hitbox.colliderect(player.rect):
+                player.take_damage(getattr(projectile, "damage", 1))
+                projectile.kill()
+                continue
+            if projectile.active:
+                active_projectiles.append(projectile)
+        mob.projectiles = active_projectiles
+
 def run_game(network, spawn_data, player_index=0):
     map_manager = MapManager(screen_size)
     parchment = load_parchment_image()
     parchment_open = False
+    map_open = False
 
     my_skin = "player" if player_index == 0 else "player2"
     other_skin = "player2" if player_index == 0 else "player"
@@ -123,28 +224,39 @@ def run_game(network, spawn_data, player_index=0):
 
     while True:
         clock.tick(60)
+        victory = map_manager.is_victory_ready()
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit(); sys.exit()
             if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
                 return
+            if event.type == pygame.KEYDOWN and event.key == pygame.K_a and event.mod & pygame.KMOD_CTRL:
+                p.toggle_god_mode()
+                continue
+            if victory:
+                if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                    if victory_button_rect(win).collidepoint(event.pos):
+                        return
+                continue
+            if event.type == pygame.KEYDOWN and event.key == pygame.K_m and map_manager.current_map == "level":
+                map_open = not map_open
             if event.type == pygame.KEYDOWN and event.key == pygame.K_e:
-                if parchment_open or is_near_oldman(map_manager, p):
+                if map_open:
+                    pass
+                elif map_manager.try_open_grid(p):
+                    pass
+                elif parchment_open or is_near_oldman(map_manager, p):
                     parchment_open = not parchment_open
-            if not parchment_open and event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+            if not parchment_open and not map_open and event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                 p.weapon.hit()
 
-        if not parchment_open:
+        if not parchment_open and not map_open and not victory:
             p.save_location()
         map_manager.render(win, (p.position.x, p.position.y))
 
-        if not parchment_open:
+        if not parchment_open and not map_open and not victory:
             p.move(map_manager)
-            map_manager.teleport_to_level_if_needed(
-                p,
-                [(p, 19), (p2, 19), (p.weapon, 18)]
-            )
 
         # Détection proximité oldman
         update_oldman_prompt(map_manager, p, parchment_open)
@@ -161,13 +273,27 @@ def run_game(network, spawn_data, player_index=0):
             "state": p.state,
             **p.get_dodge_state(),
             "hit": p.weapon.animation,
+            "weapon_attack_id": p.weapon.attack_id,
             "weapon_rect": weapon_rect,
             "weapon_angle": p.weapon.angle,
             "weapon_dir": p.weapon.direction,
-            "skin": my_skin
+            "skin": my_skin,
+            "grid_open": map_manager.grid_open,
+            "current_map": map_manager.current_map,
+            "collected_keys": list(p.collected_keys),
+            "god_mode": p.god_mode
         })
 
         if data and "player" in data:
+            if data.get("current_map") == "level" and map_manager.current_map == "spawn":
+                map_manager.place_player_on_level(
+                    p,
+                    [(p, 19), (p2, 19), (p.weapon, 18), (p2.weapon, 18)],
+                    player_index=player_index
+                )
+            if data.get("grid_open") and map_manager.current_map == "level":
+                map_manager.open_grid()
+            map_manager.apply_shared_keys(p, data.get("collected_keys", []))
             p2.position.x = data["player"]["x"]
             p2.position.y = data["player"]["y"]
             p2.direction  = data["player"]["dir"]
@@ -177,7 +303,6 @@ def run_game(network, spawn_data, player_index=0):
                 data["player"].get("dodging", False),
                 data["player"].get("dodge_frame", 0)
             )
-
             other_data = data["player"]
             p2.weapon.apply_remote(
                 x         = other_data["x"],
@@ -191,7 +316,18 @@ def run_game(network, spawn_data, player_index=0):
             if mobs_data is None and "mob" in data:
                 mobs_data = [data["mob"]]
             if mobs_data:
-                for mob, mob_data in zip(map_manager.mobs, mobs_data):
+                remaining_mobs_data = list(mobs_data)
+                for mob in map_manager.mobs:
+                    mob_data = next(
+                        (
+                            candidate for candidate in remaining_mobs_data
+                            if candidate.get("type") == mob.mob_type
+                        ),
+                        None
+                    )
+                    if mob_data is None:
+                        continue
+                    remaining_mobs_data.remove(mob_data)
                     server_hp = mob_data.get("hp", mob.hp)
                     if server_hp < mob.hp:
                         damage = mob.hp - server_hp
@@ -202,13 +338,35 @@ def run_game(network, spawn_data, player_index=0):
                         mob.position.y = mob_data["y"]
                         mob.direction  = mob_data["dir"]
                         mob.state      = mob_data["state"]
+                        mob.attack_kind = mob_data.get("attack_kind")
+                        target = mob_data.get("attack_target")
+                        if target:
+                            mob._attack_target = pygame.math.Vector2(target)
+                        mob.golem_phase = mob_data.get("golem_phase", mob.golem_phase)
+                        mob.damage = mob_data.get("damage", mob.damage)
                     mob.update()
+            update_mob_projectiles(map_manager, p)
+            for mob in map_manager.mobs:
+                if p.alive and mob.is_attack_hit_frame:
+                    if mob.position.distance_to(p.position) <= mob.attack_radius:
+                        p.take_damage(mob.damage)
+                        break
+            map_manager.update_progression(p)
+        victory = map_manager.is_victory_ready()
         draw_health_bar(win, p.hp, MAX_HP)
+        draw_grid_message(win, map_manager, p)
+        draw_teleport_waiting_message(win, map_manager, [p, p2])
+        if map_open:
+            map_manager.draw_level_map(win, p)
+        draw_key_inventory(win, map_manager, p)
+        draw_god_mode_indicator(win, p)
 
         if not p.alive:
             draw_death_screen(win)
         if parchment_open:
             draw_parchment(win, parchment)
+        if victory:
+            draw_victory_screen(win)
         pygame.display.update()
 
 
@@ -220,6 +378,7 @@ while True:
         map_manager = MapManager(screen_size)
         parchment = load_parchment_image()
         parchment_open = False
+        map_open = False
         p = Player(map_manager.spawn1.x, map_manager.spawn1.y, 130)
         map_manager.add_sprite(p, layer=19)
         map_manager.add_sprite(p.weapon, layer=18)
@@ -227,22 +386,37 @@ while True:
         clock = pygame.time.Clock()
         while True:
             clock.tick(60)
+            victory = map_manager.is_victory_ready()
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     pygame.quit();
                     sys.exit()
                 if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
                     break
+                if event.type == pygame.KEYDOWN and event.key == pygame.K_a and event.mod & pygame.KMOD_CTRL:
+                    p.toggle_god_mode()
+                    continue
+                if victory:
+                    if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                        if victory_button_rect(win).collidepoint(event.pos):
+                            break
+                    continue
+                if event.type == pygame.KEYDOWN and event.key == pygame.K_m and map_manager.current_map == "level":
+                    map_open = not map_open
                 if event.type == pygame.KEYDOWN and event.key == pygame.K_e:
-                    if parchment_open or is_near_oldman(map_manager, p):
+                    if map_open:
+                        pass
+                    elif map_manager.try_open_grid(p):
+                        pass
+                    elif parchment_open or is_near_oldman(map_manager, p):
                         parchment_open = not parchment_open
-                if not parchment_open and event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                if not parchment_open and not map_open and event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                     p.weapon.hit()
             else:
-                if not parchment_open:
+                if not parchment_open and not map_open and not victory:
                     p.save_location()
                 map_manager.render(win, (p.position.x, p.position.y))
-                if not parchment_open:
+                if not parchment_open and not map_open and not victory:
                     p.move(map_manager)
                     map_manager.teleport_to_level_if_needed(
                         p,
@@ -251,29 +425,43 @@ while True:
                 # Détection proximité oldman
                 update_oldman_prompt(map_manager, p, parchment_open)
 
-                now = pygame.time.get_ticks()
-                for mob in map_manager.mobs:
-                    mob.update_ai(p.position, map_manager.collisions, now, map_manager.mobs)
-                    mob.update()
-                # Coup du mob sur le joueur (solo) : seulement sur la frame de coup
-                for mob in map_manager.mobs:
-                    if p.alive and mob.is_attack_hit_frame:
-                        if mob.position.distance_to(p.position) <= ATTACK_RADIUS:
-                            p.take_damage(1)
-                            break
-
-                # Détection de coup
-                if p.weapon.hitbox:
+                if not victory:
+                    now = pygame.time.get_ticks()
                     for mob in map_manager.mobs:
-                        if mob.alive and p.weapon.hitbox.colliderect(mob.hitbox):
-                            mob.take_damage(1)
+                        if mob.mob_type == "golem" and not map_manager.grid_open:
+                            mob.update()
+                            continue
+                        mob.update_ai(p.position, map_manager.collisions, now, map_manager.mobs)
+                        mob.update()
+                    update_mob_projectiles(map_manager, p)
+                    # Coup du mob sur le joueur (solo) : seulement sur la frame de coup
+                    for mob in map_manager.mobs:
+                        if p.alive and mob.is_attack_hit_frame:
+                            if mob.position.distance_to(p.position) <= mob.attack_radius:
+                                p.take_damage(mob.damage)
+                                break
 
+                    # Détection de coup
+                    if p.weapon.hitbox:
+                        for mob in map_manager.mobs:
+                            if mob.alive and p.weapon.hitbox.colliderect(mob.hitbox):
+                                mob.take_damage(p.damage)
+
+                    map_manager.update_progression(p)
+                victory = map_manager.is_victory_ready()
                 draw_health_bar(win, p.hp, MAX_HP)
+                draw_grid_message(win, map_manager, p)
+                if map_open:
+                    map_manager.draw_level_map(win, p)
+                draw_key_inventory(win, map_manager, p)
+                draw_god_mode_indicator(win, p)
 
                 if not p.alive:
                     draw_death_screen(win)
                 if parchment_open:
                     draw_parchment(win, parchment)
+                if victory:
+                    draw_victory_screen(win)
                 pygame.display.update()
                 continue
             break

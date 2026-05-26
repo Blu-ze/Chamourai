@@ -7,6 +7,7 @@ import os
 import threading
 import random
 from mob import Mob
+from player import PLAYER_DAMAGE, GOD_MODE_DAMAGE
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -15,26 +16,71 @@ def map_path(relative_path):
 
 pygame.init()
 
-tmx_data  = pytmx.TiledMap(map_path('map/spawn.tmx'))
-spawn1    = tmx_data.get_object_by_name("Player1Spawn")
-spawn2    = tmx_data.get_object_by_name("Player2Spawn")
-
-def get_optional_object(name):
+def get_optional_object(tmx_data, name):
     try:
         return tmx_data.get_object_by_name(name)
     except (KeyError, ValueError):
         return None
 
-skeleton_spawns = [obj for obj in tmx_data.objects if obj.name == "Skeleton"]
-if not skeleton_spawns:
-    legacy_spawn = get_optional_object("MobSpawn")
-    if legacy_spawn:
-        skeleton_spawns.append(legacy_spawn)
+MOB_TYPES_BY_OBJECT_NAME = {
+    "Skeleton": "skeleton",
+    "SkeletonBoss": "skeleton_boss",
+    "Necromancer": "necromancer",
+    "NecromancerBoss": "necromancer_boss",
+    "Golem": "golem",
+}
+def load_map_config(map_name):
+    tmx_data = pytmx.TiledMap(map_path(f"map/{map_name}.tmx"))
+    mob_spawns = [
+        (MOB_TYPES_BY_OBJECT_NAME[obj.name], obj)
+        for obj in tmx_data.objects
+        if obj.name in MOB_TYPES_BY_OBJECT_NAME
+    ]
+    if not mob_spawns:
+        legacy_spawn = get_optional_object(tmx_data, "MobSpawn")
+        if legacy_spawn:
+            mob_spawns.append(("skeleton", legacy_spawn))
 
-collisions = []
-for obj in tmx_data.objects:
-    if obj.type == "collision":
-        collisions.append(pygame.Rect(obj.x, obj.y, obj.width, obj.height))
+    collisions = []
+    grid_collisions = []
+    teleports = []
+    for obj in tmx_data.objects:
+        if obj.type == "collision":
+            collisions.append(pygame.Rect(obj.x, obj.y, obj.width, obj.height))
+        if obj.name == "teleport" or obj.type == "teleport":
+            teleports.append(pygame.Rect(obj.x, obj.y, obj.width, obj.height))
+    for layer in tmx_data.layers:
+        layer_name = getattr(layer, "name", "").lower()
+        if not isinstance(layer, pytmx.TiledTileLayer) or layer_name not in ("walls", "grid"):
+            continue
+        for x, y, gid in layer:
+            if gid:
+                collision = pygame.Rect(
+                    x * tmx_data.tilewidth,
+                    y * tmx_data.tileheight,
+                    tmx_data.tilewidth,
+                    tmx_data.tileheight,
+                )
+                collisions.append(collision)
+                if layer_name == "grid":
+                    grid_collisions.append(collision)
+
+    return {
+        "spawn1": tmx_data.get_object_by_name("Player1Spawn"),
+        "spawn2": tmx_data.get_object_by_name("Player2Spawn"),
+        "mob_spawns": mob_spawns,
+        "collisions": collisions,
+        "grid_collisions": grid_collisions,
+        "teleports": teleports,
+    }
+
+
+MAP_CONFIGS = {
+    "spawn": load_map_config("spawn"),
+    "level": load_map_config("level"),
+}
+spawn1 = MAP_CONFIGS["spawn"]["spawn1"]
+spawn2 = MAP_CONFIGS["spawn"]["spawn2"]
 
 def mob_to_dict(mob):
     return {
@@ -44,18 +90,56 @@ def mob_to_dict(mob):
         "state": mob.state,
         "alive": mob.alive,
         "hp":    mob.hp,
+        "type":  mob.mob_type,
+        "attack_kind": mob.attack_kind,
+        "attack_target": (mob._attack_target.x, mob._attack_target.y),
+        "golem_phase": mob.golem_phase,
+        "damage": mob.damage,
     }
 
-def spawn_to_dict(spawn):
-    return {"x": spawn.x, "y": spawn.y, "dir": "right", "state": "idle"}
+def spawn_to_dict(spawn_data):
+    mob_type, spawn = spawn_data
+    return {"x": spawn.x, "y": spawn.y, "dir": "right", "state": "idle", "type": mob_type}
 
-def create_skeletons():
-    skeletons = []
-    for spawn in skeleton_spawns:
-        skeleton = Mob('skeleton', spawn.x, spawn.y, 100)
-        skeleton.init_pathfinding(collisions)
-        skeletons.append(skeleton)
-    return skeletons
+def create_mobs(map_name):
+    config = MAP_CONFIGS[map_name]
+    mobs = []
+    for mob_type, spawn in config["mob_spawns"]:
+        mob = Mob(mob_type, spawn.x, spawn.y, 100)
+        mob.init_pathfinding(config["collisions"])
+        mobs.append(mob)
+    return mobs
+
+
+def player_is_on_spawn_teleport(state):
+    feet_position = (state["x"], state["y"] + 32)
+    return any(rect.collidepoint(feet_position) for rect in MAP_CONFIGS["spawn"]["teleports"])
+
+
+def enter_level(salon):
+    config = MAP_CONFIGS["level"]
+    salon["current_map"] = "level"
+    salon["collisions"] = config["collisions"]
+    salon["grid_open"] = False
+    salon["skeletons"] = create_mobs("level")
+    salon["mobs"] = [mob_to_dict(mob) for mob in salon["skeletons"]]
+    salon["mob"] = salon["mobs"][0] if salon["mobs"] else None
+    for index, spawn in enumerate((config["spawn1"], config["spawn2"])):
+        salon["states"][index]["x"] = spawn.x
+        salon["states"][index]["y"] = spawn.y
+
+
+def open_grid(salon):
+    if salon["grid_open"]:
+        return
+    salon["grid_open"] = True
+    grid_ids = {id(collision) for collision in MAP_CONFIGS["level"]["grid_collisions"]}
+    salon["collisions"] = [
+        collision for collision in salon["collisions"]
+        if id(collision) not in grid_ids
+    ]
+    for mob in salon["skeletons"]:
+        mob.init_pathfinding(salon["collisions"])
 
 server = "0.0.0.0"
 port   = 5555
@@ -102,6 +186,8 @@ def mob_loop(code):
                 continue
             skeletons = salon["skeletons"]
             states   = salon["states"]
+            current_collisions = salon["collisions"]
+            grid_open = salon["grid_open"]
 
         now_ms = pygame.time.get_ticks()
         positions = [
@@ -109,14 +195,25 @@ def mob_loop(code):
             pygame.math.Vector2(states[1]["x"], states[1]["y"])
         ]
         for skeleton in skeletons:
+            if skeleton.mob_type == "golem" and not grid_open:
+                skeleton.update()
+                continue
             nearest = min(positions, key=lambda p: skeleton.position.distance_to(p))
-            skeleton.update_ai(nearest, collisions, now_ms, skeletons)
+            skeleton.update_ai(nearest, current_collisions, now_ms, skeletons)
             skeleton.update()
+            for projectile in skeleton.projectiles:
+                projectile.update(current_collisions)
+            skeleton.projectiles = [
+                projectile for projectile in skeleton.projectiles
+                if projectile.active
+            ]
 
         with salons_lock:
             if code in salons:
-                salons[code]["mobs"] = [mob_to_dict(skeleton) for skeleton in skeletons]
-                salons[code]["mob"] = salons[code]["mobs"][0] if salons[code]["mobs"] else None
+                salon = salons[code]
+                if salon["skeletons"] is skeletons:
+                    salon["mobs"] = [mob_to_dict(skeleton) for skeleton in skeletons]
+                    salon["mob"] = salon["mobs"][0] if salon["mobs"] else None
 
 def threaded_client(conn):
     try:
@@ -132,9 +229,14 @@ def threaded_client(conn):
                         {"x": spawn2.x, "y": spawn2.y, "dir": "right", "state": "idle",  "skin": "player2"}
                     ],
                     "started":   False,
-                    "mobs":      [spawn_to_dict(spawn) for spawn in skeleton_spawns],
-                    "mob":       spawn_to_dict(skeleton_spawns[0]) if skeleton_spawns else None,
+                    "current_map": "spawn",
+                    "collisions": MAP_CONFIGS["spawn"]["collisions"],
+                    "grid_open": False,
+                    "mobs":      [spawn_to_dict(spawn) for spawn in MAP_CONFIGS["spawn"]["mob_spawns"]],
+                    "mob":       spawn_to_dict(MAP_CONFIGS["spawn"]["mob_spawns"][0]) if MAP_CONFIGS["spawn"]["mob_spawns"] else None,
                     "skeletons": [],
+                    "last_attack_ids": [-1, -1],
+                    "collected_keys": set(),
                     "host_conn": conn
                 }
             conn.sendall(pickle.dumps({"status": "ok", "code": code, "player": 0}))
@@ -157,7 +259,7 @@ def threaded_client(conn):
                     if msg == "START":
                         with salons_lock:
                             salons[code]["started"] = True
-                            skeletons = create_skeletons()
+                            skeletons = create_mobs("spawn")
                             salons[code]["skeletons"] = skeletons
                             salons[code]["mobs"] = [mob_to_dict(skeleton) for skeleton in skeletons]
                             salons[code]["mob"] = salons[code]["mobs"][0] if salons[code]["mobs"] else None
@@ -218,13 +320,29 @@ def threaded_client(conn):
             with salons_lock:
                 if code not in salons:
                     break
-                salons[code]["states"][player_index] = data
-                other = salons[code]["states"][1 - player_index]
-                mobs = salons[code]["mobs"]
-                skeletons = salons[code]["skeletons"]
+                salon = salons[code]
+                if salon["current_map"] == "level" and data.get("current_map") == "spawn":
+                    previous = salon["states"][player_index]
+                    data = dict(data, x=previous["x"], y=previous["y"])
+                salon["states"][player_index] = data
+                if (
+                    salon["current_map"] == "spawn"
+                    and all(player_is_on_spawn_teleport(state) for state in salon["states"])
+                ):
+                    enter_level(salon)
+                if data.get("grid_open") and salon["current_map"] == "level":
+                    open_grid(salon)
+                salon["collected_keys"].update(data.get("collected_keys", []))
+                other = salon["states"][1 - player_index]
+                mobs = salon["mobs"]
+                skeletons = salon["skeletons"]
 
                 # Détection de coup : le joueur envoie weapon_rect pendant son animation
-                if data.get("hit") and skeletons:
+                attack_id = data.get("weapon_attack_id", -1)
+                new_attack = attack_id != salon["last_attack_ids"][player_index]
+                if data.get("hit") and new_attack and skeletons:
+                    salon["last_attack_ids"][player_index] = attack_id
+                    player_damage = GOD_MODE_DAMAGE if data.get("god_mode") else PLAYER_DAMAGE
                     weapon_rect = data.get("weapon_rect")
                     if weapon_rect:
                         wr = pygame.Rect(weapon_rect)
@@ -232,12 +350,22 @@ def threaded_client(conn):
                             if not skeleton.alive:
                                 continue
                             if wr.colliderect(skeleton.hitbox):
-                                skeleton.take_damage(1)
+                                skeleton.take_damage(player_damage)
                                 mobs[index] = mob_to_dict(skeleton)
-                                salons[code]["mobs"] = mobs
-                                salons[code]["mob"] = mobs[0] if mobs else None
+                                salon["mobs"] = mobs
+                                salon["mob"] = mobs[0] if mobs else None
+                current_map = salon["current_map"]
+                grid_open = salon["grid_open"]
+                collected_keys = list(salon["collected_keys"])
 
-            reply = {"player": other, "mobs": mobs, "mob": mobs[0] if mobs else None}
+            reply = {
+                "player": other,
+                "mobs": mobs,
+                "mob": mobs[0] if mobs else None,
+                "current_map": current_map,
+                "grid_open": grid_open,
+                "collected_keys": collected_keys,
+            }
             conn.sendall(pickle.dumps(reply))
 
     except Exception as e:
