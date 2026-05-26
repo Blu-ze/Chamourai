@@ -58,7 +58,7 @@
 
 \section{Introduction}
 
-\textit{Chamouraï} est un jeu d'action-aventure en vue du dessus, réalisé en Python avec
+\textit{Chamouraï} est un jeu d'action et d'aventure en vue du dessus, réalisé en Python avec
 Pygame. Le joueur incarne un chat samouraï qui doit progresser d'une forêt vers un
 donjon, affronter des ennemis de plus en plus dangereux, réunir deux clés puis vaincre
 un golem. Notre objectif était de proposer une expérience immédiatement jouable, mais
@@ -67,15 +67,22 @@ attaques.
 
 Le projet a beaucoup évolué depuis sa première version. Le prototype initial reposait
 principalement sur le déplacement du joueur, l'épée orientée à la souris, quelques
-ennemis et une carte. La version actuelle comprend un tutoriel intégré, des objectifs
-successifs, plusieurs familles d'ennemis, des boss, un verrouillage du donjon par
-clés, une carte consultable, des musiques contextuelles et un mode coopératif avec
+ennemis et une carte. La version actuelle comprend un apprentissage guidé, des objectifs
+successifs, plusieurs familles d'ennemis, des adversaires majeurs, un verrouillage du donjon par
+clés, une carte consultable, des musiques contextuelles et un mode à deux joueurs avec
 gestion de la mort et de la reprise de partie.
 
-Le jeu conserve une inspiration de type \textit{die and retry} : perdre fait partie de
+Le jeu repose sur un principe d'apprentissage par l'échec : perdre fait partie de
 l'apprentissage. Nous avons cependant cherché à rendre les échecs compréhensibles.
-Les animations annoncent les attaques, la barre de vie du boss donne un repère clair
+Les animations annoncent les attaques, la barre de vie de l'adversaire majeur donne un repère clair
 et la reprise depuis le début du donjon évite de répéter inutilement l'introduction.
+
+L'identité de \textit{Chamouraï} vient du rapprochement de deux univers que nous
+apprécions : l'ambiance de samouraïs et les paysages japonais de
+\textit{Ghost of Tsushima}, associés au personnage félin de \textit{Stray}. Cette
+association nous a conduit à imaginer un héros à la fois attachant et combattant :
+un chat samouraï placé dans un monde menacé, mais encore riche en couleurs et en
+détails.
 
 \imageplaceholder{Vue générale d'une partie de \textit{Chamouraï}}{Capture du joueur dans la forêt, avec plusieurs squelettes visibles, l'interface de vie et le panneau d'objectif en haut à gauche.}
 
@@ -89,9 +96,9 @@ et la reprise depuis le début du donjon évite de répéter inutilement l'intro
 \hline
 Baptiste LOISEAU & Chef de projet, conception des cartes, jouabilité, intégration graphique et équilibrage des combats \\
 \hline
-Lucas HUET & Interfaces, menus, musiques, effets sonores et réglages audio \\
+Lucas HUET & Interfaces, menus, musiques, effets sonores et réglages du son \\
 \hline
-Loan BLANPAIN & Site web, scénario, univers et communication du projet \\
+Loan BLANPAIN & Site internet, scénario, univers et communication du projet \\
 \hline
 Simon BOURGEOIS & Intelligence artificielle, déplacements des ennemis et multijoueur \\
 \hline
@@ -102,7 +109,7 @@ Cette répartition nous a donné des domaines de responsabilité clairs, mais le
 peut pas être assemblé en isolant complètement les tâches. Par exemple, une nouvelle
 zone créée dans Tiled influence les collisions, l'intelligence artificielle, les
 objectifs, les sons et la synchronisation réseau. Une partie importante du travail a
-donc été l'intégration : tester ensemble les ajouts de chacun et résoudre les conflits
+donc été l'intégration : vérifier ensemble les ajouts de chacun et résoudre les conflits
 lorsque plusieurs fonctionnalités modifiaient la boucle principale du jeu.
 
 \sectionbreak
@@ -115,6 +122,7 @@ lui demander de découvrir toutes les commandes au milieu d'un combat difficile,
 avons ajouté une suite d'objectifs affichée en haut à gauche de l'écran :
 
 \begin{enumerate}
+    \item parler au vieil homme afin de découvrir le parchemin et l'interaction ;
     \item frapper trois fois afin de comprendre l'utilisation de l'épée ;
     \item esquiver trois fois pour apprendre la mobilité défensive ;
     \item éliminer trois squelettes dans la forêt ;
@@ -124,12 +132,12 @@ avons ajouté une suite d'objectifs affichée en haut à gauche de l'écran :
 \end{enumerate}
 
 Le portail vers le donjon n'est accessible que lorsque les premiers objectifs sont
-validés. Ce choix évite qu'un joueur se retrouve face aux boss sans avoir utilisé les
-actions essentielles. En multijoueur, les éliminations utiles au tutoriel sont
+validés. Ce choix évite qu'un joueur se retrouve face aux adversaires majeurs sans avoir utilisé les
+actions essentielles. À deux joueurs, les éliminations utiles à l'apprentissage sont
 synchronisées : les deux joueurs partagent ainsi la même progression au lieu de se
 retrouver bloqués à des étapes différentes.
 
-\imageplaceholder{Tutoriel et objectifs successifs}{Capture du début de partie avec le panneau d'objectif affichant, par exemple, « Frapper 3 fois » et sa progression.}
+\imageplaceholder{Apprentissage et objectifs successifs}{Capture du début de partie avec le panneau d'objectif affichant « Parler au vieil homme », puis une étape chiffrée comme « Frapper 3 fois ».}
 
 \subsection{Exploration et carte}
 
@@ -139,14 +147,14 @@ supprimer la nécessité d'explorer. La carte est volontairement fonctionnelle :
 elle montre les zones utiles et le joueur, mais ne remplace pas le déplacement réel
 dans le niveau.
 
-La grille qui ferme l'accès au golem constitue l'objectif central du donjon. Deux boss
+La grille qui ferme l'accès au golem constitue l'objectif central du donjon. Deux adversaires majeurs
 intermédiaires laissent tomber chacun une clé lorsqu'ils sont vaincus. Dans la zone
 devant la grille, un message indique le nombre de clés requis ; après collecte des
 deux clés, le joueur peut appuyer sur \texttt{E} pour ouvrir le passage. Cette
-interaction relie combat et exploration : éliminer les boss a une conséquence visible
+interaction relie combat et exploration : éliminer les adversaires majeurs a une conséquence visible
 sur la carte.
 
-\imageplaceholder{Carte du niveau et position du joueur}{Capture de la carte ouverte avec la position du joueur, les principales salles et la zone du boss final.}
+\imageplaceholder{Carte du niveau et position du joueur}{Capture de la carte ouverte avec la position du joueur, les principales salles et la zone de l'adversaire final.}
 
 \imageplaceholder{Grille et compteur de clés}{Capture devant la grille fermée, avec les deux emplacements de clés à l'écran et le message demandant deux clés.}
 
@@ -157,10 +165,12 @@ une icône animée de touche \texttt{E} apparaît ; l'interaction ouvre un parch
 grand à l'écran. Pendant sa lecture, le déplacement, l'esquive et l'attaque sont
 bloqués afin de ne pas provoquer une action involontaire derrière l'interface.
 
-Cette scène est simple, mais elle donne une présence au monde et permet de transmettre
-une indication narrative sans créer un écran de dialogue complexe. Nous avons ralenti
-l'animation de la touche d'interaction afin qu'elle attire l'attention sans clignoter
-de manière gênante.
+Le parchemin a deux rôles. Il présente d'abord les commandes principales au joueur,
+puis il introduit la situation : la population est terrorisée par les monstres du
+donjon, qui commencent désormais à rôder jusque dans la forêt. Cette scène donne ainsi
+un objectif au personnage avant son premier affrontement, sans imposer une longue
+séquence d'explication séparée du jeu. Nous avons ralenti l'animation de la touche
+d'interaction afin qu'elle attire l'attention sans clignoter de manière gênante.
 
 \imageplaceholder{Interaction avec le vieil homme}{Capture du vieil homme avec l'icône E visible, puis du parchemin ouvert en superposition à l'écran.}
 
@@ -175,6 +185,13 @@ contenu en éléments de jeu. Cette méthode est beaucoup plus souple que d'écr
 positions directement en Python : la carte peut être retouchée visuellement sans
 modifier la logique centrale.
 
+La forêt devait être davantage qu'une simple zone de départ. Nous souhaitions créer
+un environnement immersif et particulièrement détaillé, afin que le joueur ressente
+la différence entre un extérieur encore vivant, mais désormais dangereux, et
+l'intérieur minéral du donjon. Le travail par calques dans Tiled nous a permis
+d'ajouter du relief visuel et des éléments de décor sans perdre la lisibilité des
+chemins et des combats.
+
 Pour les ennemis, chaque objet Tiled portant le nom \texttt{Skeleton},
 \texttt{Necromancer}, \texttt{SkeletonBoss}, \texttt{NecromancerBoss} ou
 \texttt{Golem} crée automatiquement le monstre correspondant. Ajouter un squelette
@@ -187,10 +204,10 @@ les zones d'apparition et d'interaction.
 
 La première carte utilisait des collisions définies objet par objet, ce qui devenait
 long et source d'erreurs dès que le décor changeait. Nous avons choisi de rendre
-bloquante toute tuile non vide du calque \texttt{Walls}. Le level designer peut ainsi
+bloquante toute tuile non vide du calque \texttt{Walls}. Le responsable de la conception des niveaux peut ainsi
 dessiner un mur et obtenir immédiatement une collision cohérente.
 
-L'accès au boss final a nécessité une distinction importante. Le calque de tuiles
+L'accès à l'adversaire final a nécessité une distinction importante. Le calque de tuiles
 \texttt{Grid} contient l'apparence et les collisions de la grille, tandis que le
 calque d'objets \texttt{GridKey} définit uniquement la zone où le message
 d'interaction apparaît. Confondre ces deux types de calques entraînait une erreur au
@@ -227,6 +244,12 @@ une attaque : l'animation pouvait sembler recommencer. Nous avons donc choisi de
 conserver l'orientation prise au début d'un coup jusqu'à sa fin. Pour le joueur, le
 résultat est plus clair : chaque action déclenche une seule animation complète.
 
+Cette mécanique a constitué l'une des parties les plus difficiles du projet. À la
+différence d'une attaque dirigée dans seulement quatre sens, elle demande de lier en
+continu le mouvement de la souris à l'orientation de l'arme. Elle nous a notamment
+obligés à mobiliser des notions de géométrie et de trigonométrie pour obtenir un
+comportement fluide et compréhensible.
+
 \imageplaceholder{Attaque orientée par le curseur}{Deux captures côte à côte : le joueur attaque vers la droite puis vers la gauche, avec le curseur visible.}
 
 \subsection{Esquive directionnelle}
@@ -242,24 +265,15 @@ joueur pouvait modifier artificiellement sa trajectoire et rendre l'action diffi
 à anticiper. Cette décision améliore aussi l'équilibrage : l'esquive est une action
 forte, mais elle engage le joueur pendant une courte durée.
 
-\subsection{Mode Invincible}
-
-Une combinaison \texttt{CTRL+A} active un mode de test nommé \textit{Invincible}. Il
-augmente fortement la vitesse et les dégâts du joueur et empêche les dégâts reçus.
-Ce mode est utile pour vérifier rapidement une salle, l'ouverture de la grille ou les
-phases du golem sans rejouer l'intégralité du niveau. Il reste identifié à l'écran et
-peut être désactivé avec la même combinaison, afin de ne pas le confondre avec
-l'équilibrage normal du jeu.
-
 \sectionbreak
-\section{Ennemis et boss}
+\section{Ennemis et adversaires majeurs}
 
 \subsection{Squelettes et nécromanciens}
 
 Le squelette constitue l'ennemi rapproché de base : il poursuit le joueur et attaque à
 courte portée. Le nécromancien introduit une menace à distance et oblige à se déplacer
-plutôt qu'à attendre derrière son épée. Chacun existe également en version boss, avec
-un sprite agrandi, une barre de vie visible au-dessus de sa tête, davantage de vie,
+plutôt qu'à attendre derrière son épée. Chacun existe également en version renforcée, avec
+une apparence agrandie, une barre de vie visible au-dessus de sa tête, davantage de vie,
 une vitesse supérieure et des attaques plus fréquentes.
 
 Lorsque plusieurs squelettes poursuivaient le joueur, ils avaient tendance à se
@@ -286,17 +300,17 @@ collision.
 
 \imageplaceholder{Affrontement avec différents ennemis}{Capture d'une salle montrant des squelettes espacés et un nécromancien attaquant à distance.}
 
-\subsection{Boss intermédiaires et clés}
+\subsection{Adversaires intermédiaires et clés}
 
 Le \textit{SkeletonBoss} et le \textit{NecromancerBoss} ne sont pas seulement des
 ennemis agrandis : leurs statistiques renforcées donnent deux combats intermédiaires
-qui préparent au boss final. À leur mort, ils déposent chacun une clé représentée par
+qui préparent à l'adversaire final. À leur mort, ils déposent chacun une clé représentée par
 un objet ramassable. Ce choix rend la progression immédiatement lisible : le joueur
 voit l'objet obtenu et le compteur de clés confirme son avancement.
 
-\imageplaceholder{Boss intermédiaire et clé déposée}{Capture d'un boss avec sa barre de vie, puis de la clé apparue au sol après sa défaite.}
+\imageplaceholder{Adversaire intermédiaire et clé déposée}{Capture d'un adversaire majeur avec sa barre de vie, puis de la clé apparue au sol après sa défaite.}
 
-\subsection{Le golem, boss final}
+\subsection{Le golem, adversaire final}
 
 Le golem est le point culminant du niveau. Son échelle est volontairement imposante et
 sa barre de vie est affichée en haut de l'écran dès que la grille tombe. En première
@@ -304,10 +318,17 @@ phase, il dispose d'une attaque de mêlée et d'un tir de bras. À partir de la 
 sa vie, son apparence devient lumineuse, ses statistiques augmentent et il obtient une
 attaque supplémentaire : une onde de choc bleue en arc de cercle.
 
-Nous avions envisagé un rayon laser continu sortant de sa tête. Sa gestion s'est
+Le choix du golem est aussi issu d'une contrainte de production. Nous avions décidé
+d'utiliser des ressources graphiques gratuites ; parmi celles qui correspondaient à
+l'esthétique du jeu, le golem était le seul adversaire disposant d'un ensemble
+d'attaques assez complet et varié pour construire un véritable combat final. Cette
+contrainte est devenue une opportunité : sa silhouette imposante correspond bien à
+une menace enfermée au fond du donjon.
+
+Nous avions envisagé un rayon lumineux continu sortant de sa tête. Sa gestion s'est
 révélée difficile à rendre fiable et lisible : placement exact de l'origine, feuille
 d'animation disposée verticalement, collision d'un rayon long et synchronisation des
-frames. Nous avons remplacé cette idée par une onde de choc. Elle conserve le rôle
+images d'animation. Nous avons remplacé cette idée par une onde de choc. Elle conserve le rôle
 recherché, c'est-à-dire forcer le joueur à esquiver en seconde phase, mais sa forme,
 sa vitesse et sa zone de contact sont plus simples à comprendre et à régler.
 
@@ -324,7 +345,7 @@ principal.
 
 \subsection{Direction graphique et animations}
 
-Le jeu adopte un style pixel art en vue du dessus. Le personnage principal a été
+Le jeu adopte un style de dessin en pixels en vue du dessus. Le personnage principal a été
 généré puis retravaillé pour correspondre à l'univers ; ses animations ont été
 adaptées aux actions principales. Les feuilles de tuiles et plusieurs monstres ont
 été sélectionnés dans des ressources compatibles avec notre direction artistique,
@@ -336,15 +357,24 @@ puis intégrés à nos contraintes d'échelle et d'animation.
     \caption{Feuille d'animation de marche du joueur}
 \end{figure}
 
-L'ajout du vieil homme, des clés et des différents boss a demandé une attention
-particulière aux dimensions de sprites : un boss doit sembler plus massif tout en
+L'ajout du vieil homme, des clés et des différents adversaires majeurs a demandé une attention
+particulière aux dimensions des images : un adversaire majeur doit sembler plus massif tout en
 conservant des collisions jouables. Le golem, notamment, utilise des images plus
-grandes que les autres personnages et des sprites séparés pour ses projectiles.
+grandes que les autres personnages et des images séparées pour ses projectiles.
+
+\subsection{Retours des personnes ayant essayé le jeu}
+
+Les personnes qui ont essayé \textit{Chamouraï} ont particulièrement apprécié
+l'association entre le chat et l'univers samouraï, qui donne rapidement une identité
+au projet. Le système de combat guidé par la souris a également été perçu comme
+original. Ces retours ont confirmé l'intérêt de conserver une attaque libre et
+directionnelle, même si sa réalisation était plus complexe qu'un système de combat
+orienté uniquement dans quelques directions fixes.
 
 \subsection{Menus et informations en jeu}
 
-Le menu principal permet d'accéder au jeu solo, au multijoueur, aux options et à la
-sortie. Le menu multijoueur offre la création ou la connexion à une partie et comprend
+Le menu principal permet d'accéder au jeu à un joueur, au jeu à deux, aux options et à la
+sortie. Le menu du jeu à deux offre la création ou la connexion à une partie et comprend
 un bouton de retour, indispensable pour ne pas enfermer le joueur dans un parcours de
 connexion. En jeu, l'interface affiche les informations utiles au bon moment :
 objectifs pendant l'apprentissage, clés dans le donjon, carte sur demande et barre du
@@ -356,18 +386,24 @@ golem lors du combat final.
     \caption{Interface principale du jeu}
 \end{figure}
 
-\imageplaceholder{Menu multijoueur}{Capture du menu permettant de rejoindre ou créer une partie, avec le bouton Retour visible.}
+\imageplaceholder{Menu du jeu à deux}{Capture du menu permettant de rejoindre ou créer une partie, avec le bouton Retour visible.}
 
 \subsection{Musiques et effets sonores}
 
 Les sons et musiques renforcent la compréhension de l'action : bruit d'attaque,
 ambiances et transitions musicales accompagnent les différents états de partie. La
 musique du donjon est lancée lors de l'entrée dans le niveau ou d'une reprise, puis une
-musique de boss prend le relais lorsque la grille s'ouvre. Le menu des sons permet de
+musique de combat final prend le relais lorsque la grille s'ouvre. Le menu des sons permet de
 régler l'expérience sans modifier le code.
 
-L'intégration audio a posé un problème fréquent dans un projet en équipe : la boucle
-principale était également modifiée par les objectifs, les boss et le multijoueur.
+Nous avons également différencié les sons selon le lieu : les pas sur l'herbe dans
+la zone extérieure ne sont pas ceux des pas sur la pierre du donjon. Les musiques
+suivent la même progression dramatique : une ambiance calme accompagne la forêt,
+une musique plus dynamique souligne l'entrée dans le donjon, puis une musique épique
+marque l'affrontement contre le golem.
+
+L'intégration sonore a posé un problème fréquent dans un projet en équipe : la boucle
+principale était également modifiée par les objectifs, les adversaires majeurs et le jeu à deux.
 Lors de la fusion de ces travaux, il fallait préserver les appels sonores sans perdre
 les règles de progression ou de reprise. Nous avons donc rattaché la musique à des
 événements identifiables, comme une transition de carte ou l'ouverture de la grille,
@@ -380,20 +416,28 @@ plutôt que de déclencher un son de manière diffuse à chaque rafraîchissemen
 \end{figure}
 
 \sectionbreak
-\section{Mode multijoueur coopératif}
+\section{Mode à deux joueurs en coopération}
 
 \subsection{Principe de connexion}
 
-Le multijoueur est conçu pour deux joueurs. L'un héberge la partie et l'autre rejoint
+Le mode à deux joueurs est conçu pour la coopération. L'un héberge la partie et l'autre rejoint
 la session ; l'hôte exécute la logique serveur nécessaire à la cohérence de la partie.
 Les joueurs envoient leurs actions et leurs états, tandis que les éléments qui doivent
 être identiques pour tous, notamment les monstres, leurs points de vie, les clés et
 l'ouverture de la grille, sont synchronisés depuis le serveur.
 
 Ce choix est adapté à un projet de petite taille : il évite une infrastructure en ligne
-permanente tout en offrant une expérience coopérative. Il demande cependant de ne pas
+permanente tout en offrant une expérience en coopération. Il demande cependant de ne pas
 faire confiance uniquement à l'affichage local. Si chaque ordinateur déplaçait ses
-propres monstres, un boss pourrait être mort sur un écran et vivant sur l'autre.
+propres monstres, un adversaire majeur pourrait être mort sur un écran et vivant sur l'autre.
+
+Nous avons volontairement limité ce mode à deux participants. Un mode pour quatre
+joueurs aurait aussi exigé de prendre en charge les parties à trois et d'équilibrer
+chaque configuration séparément. Nos cartes sont conçues pour un ou deux personnages :
+au-delà, l'espace de combat deviendrait encombré et les animations se superposeraient,
+ce qui rendrait l'action plus difficile à lire. Enfin, l'ordinateur de l'hôte gère le
+serveur et les échanges de la partie ; multiplier les participants aurait accru sa
+charge de traitement et la complexité de la synchronisation.
 
 \subsection{Progression et équilibrage à deux}
 
@@ -404,12 +448,12 @@ de son partenaire pendant qu'il termine un combat ou lit un parchemin.
 
 À deux, tous les monstres possèdent deux fois plus de vie. Sans cette adaptation, les
 deux épées réduiraient fortement la durée des affrontements, en particulier contre les
-boss. Le doublement des points de vie est un réglage simple, cohérent et compréhensible
-pour maintenir l'intérêt des combats coopératifs.
+adversaires majeurs. Le doublement des points de vie est un réglage simple, cohérent et compréhensible
+pour maintenir l'intérêt des combats en coopération.
 
 \subsection{Mort, observation et reprise}
 
-Lorsqu'un joueur meurt en multijoueur, il disparaît du combat et peut observer la
+Lorsqu'un joueur meurt dans une partie à deux, il disparaît du combat et peut observer la
 partie : sa caméra suit le partenaire encore vivant. Il peut aussi retourner au menu.
 Si les deux joueurs meurent, un écran de défaite apparaît. Chacun peut voter pour
 recommencer ; la partie ne redémarre au début du donjon que lorsque les deux votes ont
@@ -419,11 +463,11 @@ Cette fonction a nécessité de synchroniser davantage qu'une simple position : 
 vivant ou mort, vote, remise à zéro des ennemis, des clés et de la grille, point de
 réapparition et musique. Nous avons retenu un redémarrage au début du donjon plutôt
 qu'au tout début du jeu afin de respecter le principe d'apprentissage par l'échec sans
-imposer à nouveau le tutoriel.
+imposer à nouveau l'apprentissage guidé.
 
-\imageplaceholder{Partie coopérative et joueur observateur}{Capture multijoueur où un joueur combat tandis que l'autre, mort, observe la partie avec sa caméra centrée sur son partenaire.}
+\imageplaceholder{Partie en coopération et joueur observateur}{Capture d'une partie à deux où un joueur combat tandis que l'autre, mort, observe la partie avec sa caméra centrée sur son partenaire.}
 
-\imageplaceholder{Défaite et vote de reprise}{Capture de l'écran de défaite multijoueur présentant le bouton de retour et le bouton de vote pour recommencer.}
+\imageplaceholder{Défaite et vote de reprise}{Capture de l'écran de défaite à deux joueurs présentant le bouton de retour et le bouton de vote pour recommencer.}
 
 \sectionbreak
 \section{Difficultés rencontrées et choix de conception}
@@ -434,12 +478,12 @@ Le placement en dur des monstres était rapide pour un prototype, mais devenait 
 frein dès que la carte changeait. L'utilisation des objets Tiled a demandé de définir
 des conventions de nommage et de gérer plusieurs types de monstres, mais elle permet
 aujourd'hui d'ajouter une rencontre sans toucher au code. De même, les collisions par
-calque ont transformé une tâche manuelle et fragile en une opération de level design.
+calque ont transformé une tâche manuelle et fragile en une opération de conception de niveau.
 
-\subsection{Concilier lisibilité et ambition des boss}
+\subsection{Concilier lisibilité et ambition des adversaires majeurs}
 
 Les attaques spectaculaires sont intéressantes seulement si le joueur comprend comment
-y répondre. Le laser du golem était ambitieux, mais son rendu et sa collision
+y répondre. Le rayon lumineux du golem était ambitieux, mais son rendu et sa collision
 manquaient de fiabilité. Le passage à une onde de choc nous a appris qu'une mécanique
 plus maîtrisée est préférable à un effet complexe qui semble injuste. La seconde phase
 reste marquante grâce au changement visuel, aux statistiques renforcées et à la
@@ -447,30 +491,30 @@ nouvelle attaque.
 
 \subsection{Synchroniser des systèmes devenus interdépendants}
 
-L'arrivée du multijoueur a révélé que de nombreux systèmes étaient liés : tuer un boss
+L'arrivée du jeu à deux a révélé que de nombreux systèmes étaient liés : vaincre un adversaire majeur
 produit une clé, deux clés ouvrent une grille, l'ouverture lance la musique et permet
 d'affronter le golem, puis la mort du golem affiche la victoire. En réseau, toutes ces
 transitions doivent être partagées dans le même ordre. Nous avons donc déplacé vers
-l'hôte les décisions importantes et transmis les états nécessaires aux clients.
+l'hôte les décisions importantes et transmis les états nécessaires aux postes connectés.
 
 Les reprises de partie ont accentué cette difficulté. Relancer uniquement les joueurs
-laisserait une grille déjà ouverte ou un boss déjà vaincu. Le redémarrage doit remettre
-en cohérence tout l'état du donjon. Ce travail est moins visible qu'un sprite ou un
-menu, mais il conditionne la fiabilité de l'expérience coopérative.
+laisserait une grille déjà ouverte ou un adversaire majeur déjà vaincu. Le redémarrage doit remettre
+en cohérence tout l'état du donjon. Ce travail est moins visible qu'une image animée ou un
+menu, mais il conditionne la fiabilité de l'expérience en coopération.
 
 \subsection{Intégrer le travail de plusieurs branches}
 
-Le développement en parallèle a permis d'avancer rapidement sur l'audio, les ennemis,
-le tutoriel et le réseau. En contrepartie, certaines fusions ont créé des conflits
+Le développement en parallèle a permis d'avancer rapidement sur le son, les ennemis,
+l'apprentissage guidé et le réseau. En contrepartie, certaines fusions ont créé des conflits
 dans le fichier principal, car toutes ces fonctionnalités interviennent dans la boucle
 du jeu. La résolution ne consistait pas uniquement à choisir une version : il fallait
 recomposer les comportements pour conserver à la fois les musiques, les objectifs,
-les boutons de reprise et les nouvelles règles multijoueur.
+les boutons de reprise et les nouvelles règles du jeu à deux.
 
 Cette expérience justifie notre effort de séparation progressive des responsabilités :
 cartes et collisions dans la gestion de niveau, ennemis dans leurs classes, menu et
-audio dans l'interface, synchronisation dans le serveur. Plus chaque fonction possède
-un emplacement clair, plus une future évolution est testable et intégrable.
+son dans l'interface, synchronisation dans le serveur. Plus chaque fonction possède
+un emplacement clair, plus une future évolution est vérifiable et intégrable.
 
 \sectionbreak
 \section{Communication et organisation}
@@ -478,7 +522,7 @@ un emplacement clair, plus une future évolution est testable et intégrable.
 \subsection{Outils de communication}
 
 Le serveur \textit{Discord} centralise les échanges techniques, les ressources et les
-réunions vocales. Il permet de signaler rapidement un bug, de montrer une capture ou
+réunions vocales. Il permet de signaler rapidement une anomalie, de montrer une capture ou
 de demander une vérification après une intégration. Instagram est utilisé de manière
 complémentaire pour des messages rapides et les imprévus.
 
@@ -488,11 +532,27 @@ complémentaire pour des messages rapides et les imprévus.
     \caption{Serveur Discord du groupe Les Chatpitres}
 \end{figure}
 
+\subsection{Gestion des versions}
+
+Nous utilisons Git pour répartir le développement et conserver l'historique du
+projet. Afin de réduire les conflits, nous communiquons sur Discord avant d'intervenir
+sur une même branche ou sur un même fichier important. Les images et les sons étant
+volumineux, nous utilisons également Git LFS, une extension de Git adaptée au suivi
+de ces fichiers.
+
+Malgré cette organisation, les fusions de branches ont parfois été délicates. Le
+fichier principal rassemble plusieurs comportements du jeu, comme les sons, les
+objectifs ou le jeu à deux ; deux ajouts indépendants peuvent donc modifier les mêmes
+passages. Certains conflits ont demandé de recomposer manuellement les modifications,
+avec le risque de perdre une fonction déjà réalisée. Cette difficulté nous a appris à
+mieux communiquer avant les fusions et à vérifier systématiquement les fonctions
+importantes après leur résolution.
+
 \subsection{Suivi des tâches}
 
 Nous organisons le travail à l'aide de \textit{MeisterTask}. Chaque tâche possède un
 responsable et un état d'avancement, ce qui permet d'identifier les fonctions à
-intégrer et celles à tester. Les réunions hebdomadaires du jeudi matin servent à
+intégrer et celles à vérifier. Les réunions hebdomadaires du jeudi matin servent à
 faire le point, répartir les priorités et résoudre collectivement les blocages les
 plus importants.
 
@@ -502,30 +562,38 @@ plus importants.
     \caption{Tableau de suivi des tâches sur MeisterTask}
 \end{figure}
 
-Dans les dernières phases, l'organisation des tests est devenue aussi importante que
-l'ajout de fonctionnalités : une mécanique correcte en solo doit être revue en
-coopératif, après une mort, après une reprise et après une transition de carte.
+Dans les dernières phases, l'organisation des vérifications est devenue aussi importante que
+l'ajout de fonctionnalités : une mécanique correcte à un joueur doit être revue à
+deux, après une mort, après une reprise et après une transition de carte.
 
 \sectionbreak
 \section{Bilan et perspectives}
 
 La version actuelle de \textit{Chamouraï} remplit le coeur de notre ambition : le
 joueur apprend les contrôles dans une introduction guidée, explore un donjon peuplé
-d'ennemis variés, récupère les clés auprès de boss intermédiaires et termine sur un
+d'ennemis variés, récupère les clés auprès d'adversaires intermédiaires et termine sur un
 combat en deux phases contre le golem. Le jeu est jouable seul ou à deux, dispose
 d'une identité sonore et visuelle, et traite les principaux cas de victoire, de
 défaite et de reprise.
 
 Les évolutions les plus importantes ne sont pas seulement quantitatives. Le passage à
 des cartes pilotant les apparitions et collisions facilite la création de contenu. La
-synchronisation multijoueur permet à la progression de rester cohérente. Enfin, les
-choix effectués pour le golem et le tutoriel montrent notre priorité : proposer une
+synchronisation entre les deux joueurs permet à la progression de rester cohérente. Enfin, les
+choix effectués pour le golem et l'apprentissage guidé montrent notre priorité : proposer une
 expérience claire, équilibrée et agréable avant de multiplier les effets difficiles à
 maîtriser.
 
-Pour une version future, nous pourrions compléter les tests réseau sur des connexions
-moins stables, enrichir le contenu du parchemin et ajouter de nouvelles salles ou
-variantes d'ennemis grâce au système de placement dans Tiled déjà en place.
+Pour une version future, nous pourrions compléter les vérifications du réseau sur des connexions
+moins stables et approfondir le combat contre le golem. Nous avions notamment imaginé
+son attaque de rayon lumineux avant de l'abandonner, car les ressources graphiques
+étaient difficiles à exploiter correctement avec Pygame ; l'onde de choc en arc de
+cercle constitue la solution que nous avons su rendre fonctionnelle.
+
+Nous aurions aussi aimé proposer plusieurs niveaux et permettre au joueur de
+débloquer de nouvelles armes au fil de sa progression. Nous avons finalement préféré
+concentrer nos efforts sur un unique niveau détaillé, avec une progression complète,
+plusieurs adversaires et un combat final, plutôt que de multiplier des zones moins
+abouties.
 
 \imageplaceholder{Équipe ou écran final du projet}{Capture finale représentative du jeu terminé : victoire contre le golem, ou montage des principales scènes du niveau.}
 
@@ -544,6 +612,6 @@ variantes d'ennemis grâce au système de placement dans Tiled déjà en place.
     \caption{Groupe Instagram de communication rapide}
 \end{figure}
 
-\imageplaceholder{Liste des ressources visuelles complémentaires}{Emplacement éventuel pour une planche réunissant les sprites des clés, du vieil homme, des boss et du golem.}
+\imageplaceholder{Liste des ressources visuelles complémentaires}{Emplacement éventuel pour une planche réunissant les images des clés, du vieil homme, des adversaires majeurs et du golem.}
 
 \end{document}
