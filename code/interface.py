@@ -44,22 +44,6 @@ class Particle:
         # Type de particule : 0=cercle, 1=étoile, 2=diamant
         self.shape = random.choice(['circle', 'star', 'diamond'])
 
-    def play_music(self, track_name, fadeout_ms=800, fadein_ms=0):
-        """Change la musique en cours. track_name = nom sans extension (ex: 'cave', 'boss')."""
-        try:
-            pygame.mixer.music.fadeout(fadeout_ms)
-            path = asset_path(f'assets/sounds/{track_name}.ogg')
-            # Fallback .wav si .ogg absent
-            if not os.path.exists(path):
-                path = asset_path(f'assets/sounds/{track_name}.wav')
-            pygame.mixer.music.load(path)
-            pygame.mixer.music.set_volume(self.volume)
-            if fadein_ms:
-                pygame.mixer.music.play(-1, fade_ms=fadein_ms)
-            else:
-                pygame.mixer.music.play(-1)
-        except Exception as e:
-            print(f"[Musique] Impossible de jouer '{track_name}' : {e}")
     def update(self):
         # Mouvement constant et fluide
         self.x += self.vx
@@ -243,7 +227,22 @@ class Interface:
             Button("+ Volume", cx2 + 110, H // 2 - 10, bw2, bh2, (70, 130, 240), (90, 150, 255)),
             Button("Retour", cx2, H // 2 + 200, bw2, bh2, (120, 120, 120), (160, 160, 160)),
         ]
-
+    def play_music(self, track_name, fadeout_ms=800, fadein_ms=0):
+        """Change la musique en cours. track_name = nom sans extension (ex: 'cave', 'boss')."""
+        try:
+            pygame.mixer.music.fadeout(fadeout_ms)
+            path = asset_path(f'assets/sounds/{track_name}.ogg')
+            # Fallback .wav si .ogg absent
+            if not os.path.exists(path):
+                path = asset_path(f'assets/sounds/{track_name}.wav')
+            pygame.mixer.music.load(path)
+            pygame.mixer.music.set_volume(self.volume)
+            if fadein_ms:
+                pygame.mixer.music.play(-1, fade_ms=fadein_ms)
+            else:
+                pygame.mixer.music.play(-1)
+        except Exception as e:
+            print(f"[Musique] Impossible de jouer '{track_name}' : {e}")
     def _draw_bg(self):
         if self.background:
             self.screen.blit(self.background, (0, 0))

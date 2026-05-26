@@ -7,26 +7,29 @@ from map import MapManager
 from interface import Interface
 from player import MAX_HP
 from mob import ATTACK_RADIUS
+
 pygame.init()
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
+
 def asset_path(relative_path):
     return os.path.join(BASE_DIR, relative_path)
 
-win           = pygame.display.set_mode((1280, 720))
+
+win = pygame.display.set_mode((1280, 720))
 pygame.display.set_caption("Chamouraï")
 
 screen_size = (1280, 720)
-interface   = Interface(screen_size, win)
+interface = Interface(screen_size, win)
 
 
 def draw_health_bar(surface, hp, max_hp):
     """Dessine la barre de vie en bas à gauche."""
-    bar_x, bar_y   = 20, surface.get_height() - 40
-    bar_w, bar_h   = 220, 22
-    border_radius  = 6
-    padding        = 3
+    bar_x, bar_y = 20, surface.get_height() - 40
+    bar_w, bar_h = 220, 22
+    border_radius = 6
+    padding = 3
 
     # Fond sombre (contour)
     pygame.draw.rect(surface, (30, 30, 30),
@@ -55,7 +58,7 @@ def draw_health_bar(surface, hp, max_hp):
 
     # Texte PV
     font = pygame.font.Font(None, 26)
-    txt  = font.render(f"PV  {hp} / {max_hp}", True, (255, 255, 255))
+    txt = font.render(f"PV  {hp} / {max_hp}", True, (255, 255, 255))
     surface.blit(txt, (bar_x + 6, bar_y + 3))
 
 
@@ -75,6 +78,7 @@ def draw_death_screen(surface):
     surface.blit(txt, txt.get_rect(center=(W // 2, H // 2 - 30)))
     surface.blit(sub, sub.get_rect(center=(W // 2, H // 2 + 55)))
 
+
 def load_parchment_image():
     image = pygame.image.load(asset_path("assets/oldman/parchemin.png")).convert_alpha()
     max_w = int(screen_size[0] * 0.8)
@@ -83,16 +87,19 @@ def load_parchment_image():
     new_size = (int(image.get_width() * scale), int(image.get_height() * scale))
     return pygame.transform.smoothscale(image, new_size)
 
+
 def draw_parchment(surface, parchment):
     overlay = pygame.Surface(surface.get_size(), pygame.SRCALPHA)
     overlay.fill((0, 0, 0, 130))
     surface.blit(overlay, (0, 0))
     surface.blit(parchment, parchment.get_rect(center=surface.get_rect().center))
 
+
 def is_near_oldman(map_manager, player, interact_radius=80):
     if not map_manager.oldman:
         return False
     return player.position.distance_to(map_manager.oldman.position) <= interact_radius
+
 
 def update_oldman_prompt(map_manager, player, parchment_open):
     if not parchment_open and is_near_oldman(map_manager, player):
@@ -103,19 +110,21 @@ def update_oldman_prompt(map_manager, player, parchment_open):
     else:
         map_manager.ekey.hide()
 
+
 def run_game(network, spawn_data, player_index=0):
     map_manager = MapManager(screen_size)
     parchment = load_parchment_image()
     parchment_open = False
+    boss_music_started = False  # garde-fou pour ne lancer la musique boss qu'une fois
 
     my_skin = "player" if player_index == 0 else "player2"
     other_skin = "player2" if player_index == 0 else "player"
 
-    p  = Player(spawn_data["x"], spawn_data["y"], 130, skin=my_skin, interface=interface)
+    p = Player(spawn_data["x"], spawn_data["y"], 130, skin=my_skin, interface=interface)
     p2 = Player(0, 0, 130, skin=other_skin)
 
-    map_manager.add_sprite(p,        layer=19)
-    map_manager.add_sprite(p2,       layer=19)
+    map_manager.add_sprite(p, layer=19)
+    map_manager.add_sprite(p2, layer=19)
     map_manager.add_sprite(p.weapon, layer=18)
     map_manager.add_sprite(p2.weapon, layer=18)
 
@@ -126,7 +135,8 @@ def run_game(network, spawn_data, player_index=0):
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                pygame.quit(); sys.exit()
+                pygame.quit();
+                sys.exit()
             if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
                 action = interface.run_pause_menu(win)
                 if action == "menu":
@@ -143,13 +153,21 @@ def run_game(network, spawn_data, player_index=0):
 
         if not parchment_open:
             p.move(map_manager)
-            map_manager.teleport_to_level_if_needed(
+            # Téléportation spawn → cave : on lance la musique cave
+            teleported = map_manager.teleport_to_level_if_needed(
                 p,
                 [(p, 19), (p2, 19), (p.weapon, 18)]
             )
+            if teleported:
+                interface.play_music('cave', fadeout_ms=800, fadein_ms=1200)
 
         # Détection proximité oldman
         update_oldman_prompt(map_manager, p, parchment_open)
+
+        # Ouverture de la grille → musique boss (une seule fois)
+        if map_manager.grid_open and not boss_music_started:
+            boss_music_started = True
+            interface.play_music('boss', fadeout_ms=600, fadein_ms=800)
 
         weapon_rect = None
         if p.weapon.hitbox:
@@ -172,8 +190,8 @@ def run_game(network, spawn_data, player_index=0):
         if data and "player" in data:
             p2.position.x = data["player"]["x"]
             p2.position.y = data["player"]["y"]
-            p2.direction  = data["player"]["dir"]
-            p2.state      = data["player"]["state"]
+            p2.direction = data["player"]["dir"]
+            p2.state = data["player"]["state"]
             p2.update()
             p2.apply_remote_dodge_animation(
                 data["player"].get("dodging", False),
@@ -182,11 +200,11 @@ def run_game(network, spawn_data, player_index=0):
 
             other_data = data["player"]
             p2.weapon.apply_remote(
-                x         = other_data["x"],
-                y         = other_data["y"],
-                angle     = other_data.get("weapon_angle", 0),
-                direction = other_data.get("weapon_dir", "right"),
-                animating = other_data.get("hit", False),
+                x=other_data["x"],
+                y=other_data["y"],
+                angle=other_data.get("weapon_angle", 0),
+                direction=other_data.get("weapon_dir", "right"),
+                animating=other_data.get("hit", False),
             )
 
             mobs_data = data.get("mobs")
@@ -202,8 +220,8 @@ def run_game(network, spawn_data, player_index=0):
                     if not mob.dead and not mob.is_hit:
                         mob.position.x = mob_data["x"]
                         mob.position.y = mob_data["y"]
-                        mob.direction  = mob_data["dir"]
-                        mob.state      = mob_data["state"]
+                        mob.direction = mob_data["dir"]
+                        mob.state = mob_data["state"]
                     mob.update()
         draw_health_bar(win, p.hp, MAX_HP)
 
@@ -222,6 +240,7 @@ while True:
         map_manager = MapManager(screen_size)
         parchment = load_parchment_image()
         parchment_open = False
+        boss_music_started = False  # garde-fou pour ne lancer la musique boss qu'une fois
         p = Player(map_manager.spawn1.x, map_manager.spawn1.y, 130, interface=interface)
         map_manager.add_sprite(p, layer=19)
         map_manager.add_sprite(p.weapon, layer=18)
@@ -231,7 +250,7 @@ while True:
             clock.tick(60)
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
-                    pygame.quit();
+                    pygame.quit()
                     sys.exit()
                 if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
                     action = interface.run_pause_menu(win)
@@ -248,12 +267,21 @@ while True:
                 map_manager.render(win, (p.position.x, p.position.y))
                 if not parchment_open:
                     p.move(map_manager)
-                    map_manager.teleport_to_level_if_needed(
+                    # Téléportation spawn → cave : on lance la musique cave
+                    teleported = map_manager.teleport_to_level_if_needed(
                         p,
                         [(p, 19), (p.weapon, 18)]
                     )
+                    if teleported:
+                        interface.play_music('cave', fadeout_ms=800, fadein_ms=1200)
+
                 # Détection proximité oldman
                 update_oldman_prompt(map_manager, p, parchment_open)
+
+                # Ouverture de la grille → musique boss (une seule fois)
+                if map_manager.grid_open and not boss_music_started:
+                    boss_music_started = True
+                    interface.play_music('boss', fadeout_ms=600, fadein_ms=800)
 
                 now = pygame.time.get_ticks()
                 for mob in map_manager.mobs:
@@ -291,27 +319,18 @@ while True:
 
         if action == "create":
             network = Network()
-            result  = interface.run_create_salon(network)
+            result = interface.run_create_salon(network)
             if result and result.get("status") == "start":
                 run_game(network, result["spawn"])
 
-
-
-
-
         elif action == "join":
-
             server_ip = interface.run_enter_ip()
-
             network = Network(server_ip=server_ip)
-
             result = interface.run_join_salon(network)
 
             if result and result.get("status") == "ok":
-
                 start_msg = interface.run_waiting_for_host(network)
 
                 if start_msg and start_msg.get("status") == "start":
                     network.send_raw({"status": "ready"})
-
                     run_game(network, start_msg["spawn"], player_index=1)
