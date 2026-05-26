@@ -296,7 +296,18 @@ def run_game(network, spawn_data, player_index=0):
             if mobs_data is None and "mob" in data:
                 mobs_data = [data["mob"]]
             if mobs_data:
-                for mob, mob_data in zip(map_manager.mobs, mobs_data):
+                remaining_mobs_data = list(mobs_data)
+                for mob in map_manager.mobs:
+                    mob_data = next(
+                        (
+                            candidate for candidate in remaining_mobs_data
+                            if candidate.get("type") == mob.mob_type
+                        ),
+                        None
+                    )
+                    if mob_data is None:
+                        continue
+                    remaining_mobs_data.remove(mob_data)
                     server_hp = mob_data.get("hp", mob.hp)
                     if server_hp < mob.hp:
                         damage = mob.hp - server_hp
