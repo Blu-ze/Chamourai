@@ -260,13 +260,26 @@ def run_game(network, spawn_data, player_index=0):
             "state": p.state,
             **p.get_dodge_state(),
             "hit": p.weapon.animation,
+            "weapon_attack_id": p.weapon.attack_id,
             "weapon_rect": weapon_rect,
             "weapon_angle": p.weapon.angle,
             "weapon_dir": p.weapon.direction,
-            "skin": my_skin
+            "skin": my_skin,
+            "grid_open": map_manager.grid_open,
+            "current_map": map_manager.current_map,
+            "collected_keys": list(p.collected_keys)
         })
 
         if data and "player" in data:
+            if data.get("current_map") == "level" and map_manager.current_map == "spawn":
+                map_manager.place_player_on_level(
+                    p,
+                    [(p, 19), (p2, 19), (p.weapon, 18), (p2.weapon, 18)],
+                    player_index=player_index
+                )
+            if data.get("grid_open") and map_manager.current_map == "level":
+                map_manager.open_grid()
+            map_manager.apply_shared_keys(p, data.get("collected_keys", []))
             p2.position.x = data["player"]["x"]
             p2.position.y = data["player"]["y"]
             p2.direction  = data["player"]["dir"]
@@ -276,13 +289,6 @@ def run_game(network, spawn_data, player_index=0):
                 data["player"].get("dodging", False),
                 data["player"].get("dodge_frame", 0)
             )
-            if not victory:
-                map_manager.teleport_to_level_if_needed(
-                    p,
-                    [(p, 19), (p2, 19), (p.weapon, 18), (p2.weapon, 18)],
-                    required_players=[p, p2]
-                )
-
             other_data = data["player"]
             p2.weapon.apply_remote(
                 x         = other_data["x"],
@@ -318,8 +324,19 @@ def run_game(network, spawn_data, player_index=0):
                         mob.position.y = mob_data["y"]
                         mob.direction  = mob_data["dir"]
                         mob.state      = mob_data["state"]
+                        mob.attack_kind = mob_data.get("attack_kind")
+                        target = mob_data.get("attack_target")
+                        if target:
+                            mob._attack_target = pygame.math.Vector2(target)
+                        mob.golem_phase = mob_data.get("golem_phase", mob.golem_phase)
+                        mob.damage = mob_data.get("damage", mob.damage)
                     mob.update()
             update_mob_projectiles(map_manager, p)
+            for mob in map_manager.mobs:
+                if p.alive and mob.is_attack_hit_frame:
+                    if mob.position.distance_to(p.position) <= mob.attack_radius:
+                        p.take_damage(mob.damage)
+                        break
             map_manager.update_progression(p)
         victory = map_manager.is_victory_ready()
         draw_health_bar(win, p.hp, MAX_HP)

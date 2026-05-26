@@ -22,6 +22,7 @@ class Player(animation.AnimateSprite):
         self.hp    = MAX_HP
         self.alive = True
         self.key_count = 0
+        self.collected_keys = set()
 
         # ── Esquive ───────────────────────────────────────────────────────────
         self.dodging        = False            # esquive en cours

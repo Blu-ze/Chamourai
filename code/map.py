@@ -63,12 +63,13 @@ class EKey(pygame.sprite.Sprite):
 
 
 class KeyDrop(pygame.sprite.Sprite):
-    def __init__(self, x, y):
+    def __init__(self, x, y, key_id):
         super().__init__()
         image = pygame.image.load(map_path('assets/key/key.png')).convert_alpha()
         self.image = pygame.transform.scale(image, (image.get_width() * 2, image.get_height() * 2))
         self.rect = self.image.get_rect(center=(x, y))
         self.position = pygame.math.Vector2(x, y)
+        self.key_id = key_id
 
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -188,6 +189,19 @@ class MapManager:
             and player.feet.collidelist(self.teleports) != -1
         )
 
+    def place_player_on_level(self, player, sprites_to_add, player_index=0):
+        self.load_map("level")
+        spawn = self.spawn1 if player_index == 0 else self.spawn2
+        if spawn:
+            player.position.x = spawn.x
+            player.position.y = spawn.y
+            player.update()
+            player.save_location()
+            player.weapon.move(player.position.x, player.position.y)
+
+        for sprite, layer in sprites_to_add:
+            self.group.add(sprite, layer=layer)
+
     def teleport_to_level_if_needed(self, player, sprites_to_add, required_players=None):
         if self.current_map != "spawn":
             return False
@@ -198,18 +212,7 @@ class MapManager:
         elif not self.is_on_teleport(player):
             return False
 
-        self.load_map("level")
-
-        if self.spawn1:
-            player.position.x = self.spawn1.x
-            player.position.y = self.spawn1.y
-            player.update()
-            player.save_location()
-            player.weapon.move(player.position.x, player.position.y)
-
-        for sprite, layer in sprites_to_add:
-            self.group.add(sprite, layer=layer)
-
+        self.place_player_on_level(player, sprites_to_add)
         return True
 
     def update_animations(self):
@@ -331,13 +334,24 @@ class MapManager:
         for mob in self.mobs:
             if mob.drops_key and mob.dead and not mob.key_dropped:
                 mob.key_dropped = True
-                key = KeyDrop(mob.position.x, mob.position.y)
+                if mob.mob_type in player.collected_keys:
+                    continue
+                key = KeyDrop(mob.position.x, mob.position.y, mob.mob_type)
                 self.key_drops.append(key)
                 self.group.add(key, layer=19)
 
         for key in list(self.key_drops):
             if player.rect.colliderect(key.rect):
-                player.key_count += 1
+                player.collected_keys.add(key.key_id)
+                player.key_count = len(player.collected_keys)
+                key.kill()
+                self.key_drops.remove(key)
+
+    def apply_shared_keys(self, player, collected_keys):
+        player.collected_keys.update(collected_keys)
+        player.key_count = len(player.collected_keys)
+        for key in list(self.key_drops):
+            if key.key_id in player.collected_keys:
                 key.kill()
                 self.key_drops.remove(key)
 
@@ -352,6 +366,12 @@ class MapManager:
         if player.key_count < 2:
             return True
 
+        self.open_grid()
+        return True
+
+    def open_grid(self):
+        if self.grid_open:
+            return
         self.grid_open = True
         grid_ids = {id(collision) for collision in self.grid_collisions}
         self.collisions = [
@@ -363,7 +383,6 @@ class MapManager:
             self.map_layer.redraw_tiles(self.map_layer._buffer)
         for mob in self.mobs:
             mob.init_pathfinding(self.collisions)
-        return True
 
     def is_victory_ready(self):
         if self.current_map != "level":
