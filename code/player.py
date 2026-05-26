@@ -29,7 +29,7 @@ class Player(animation.AnimateSprite):
         self._dodge_used_ms = -DODGE_COOLDOWN  # timestamp fin de la dernière esquive
 
         # Frames de l'animation jump (même structure que walk : moitié droite / moitié gauche)
-        self._jump_frames = animation.animations.get('player_jump', [])
+        self._jump_frames = animation.animations.get(f'{skin}_jump', [])
 
     # ── Utilitaires ───────────────────────────────────────────────────────────
 
@@ -50,6 +50,26 @@ class Player(animation.AnimateSprite):
             self.alive = False
             self.state = "idle"
 
+    def get_dodge_state(self):
+        return {
+            "dodging": self.dodging,
+            "dodge_frame": self._dodge_frame,
+        }
+
+    def apply_remote_dodge_animation(self, dodging, dodge_frame):
+        if not dodging:
+            self.update_animation()
+            return
+
+        frames = self._jump_frames
+        if not frames:
+            self.update_animation()
+            return
+
+        frame = int(dodge_frame or 0)
+        frame = max(0, min(frame, len(frames) - 1))
+        self.image = frames[frame]
+
     # ── Logique principale ────────────────────────────────────────────────────
 
     def move(self, map_manager):
@@ -68,6 +88,12 @@ class Player(animation.AnimateSprite):
             return
 
         keys   = pygame.key.get_pressed()
+
+        # Declenche l'esquive avant d'appliquer un deplacement classique.
+        if keys[pygame.K_SPACE] and now - self._dodge_used_ms >= DODGE_COOLDOWN:
+            self._start_dodge(now, map_manager)
+            return
+
         moving = False
 
         # Axe X
@@ -114,11 +140,7 @@ class Player(animation.AnimateSprite):
             self.state = "idle"
             self.current_image = 0
 
-        # ── Déclenchement de l'esquive ────────────────────────────────────────
-        if keys[pygame.K_SPACE] and now - self._dodge_used_ms >= DODGE_COOLDOWN:
-            self._start_dodge(now, map_manager)
-            return
-
+        # Mise a jour de l'arme
         self.weapon.move(self.position.x, self.position.y)
         new_direction = self.weapon.rotate(self.position, map_manager)
         self.set_direction(new_direction)
@@ -133,6 +155,7 @@ class Player(animation.AnimateSprite):
     def _start_dodge(self, now, map_manager):
         self.dodging = True
         self.invincible = True
+        self.state = "dodge"
 
         # Direction opposée à la souris
         mouse_pos = pygame.math.Vector2(pygame.mouse.get_pos())

@@ -110,6 +110,21 @@ class MapManager:
             if obj.name == "Necromancer":
                 mob_spawns.append(("necromancer", obj))
 
+        # Collisions peintes directement dans le calque de tuiles Walls.
+        for layer in self.tmx_data.layers:
+            if getattr(layer, "name", None) != "Walls":
+                continue
+            for x, y, gid in layer:
+                if gid:
+                    self.collisions.append(
+                        pygame.Rect(
+                            x * self.tmx_data.tilewidth,
+                            y * self.tmx_data.tileheight,
+                            self.tmx_data.tilewidth,
+                            self.tmx_data.tileheight
+                        )
+                    )
+
         # Mob affiché côté client (pas d'IA, juste le rendu)
         if not mob_spawns:
             legacy_spawn = self.get_object("MobSpawn")
