@@ -217,7 +217,7 @@ def run_game(network, spawn_data, player_index=0):
     my_skin = "player" if player_index == 0 else "player2"
     other_skin = "player2" if player_index == 0 else "player"
 
-    p  = Player(spawn_data["x"], spawn_data["y"], 130, skin=my_skin)
+    p  = Player(spawn_data["x"], spawn_data["y"], 130, skin=my_skin, interface=interface)
     p2 = Player(0, 0, 130, skin=other_skin)
 
     map_manager.add_sprite(p,        layer=19)
@@ -235,7 +235,10 @@ def run_game(network, spawn_data, player_index=0):
             if event.type == pygame.QUIT:
                 pygame.quit(); sys.exit()
             if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
-                return
+                action = interface.run_pause_menu(win)
+                if action == "menu":
+                    return
+                continue
             if event.type == pygame.KEYDOWN and event.key == pygame.K_a and event.mod & pygame.KMOD_CTRL:
                 p.toggle_god_mode()
                 continue
@@ -336,7 +339,7 @@ def run_game(network, spawn_data, player_index=0):
                     server_hp = mob_data.get("hp", mob.hp)
                     if server_hp < mob.hp:
                         damage = mob.hp - server_hp
-                        mob.take_damage(damage)
+                        mob.take_damage(damage, interface)
                     # Synchronise position/direction seulement si pas en animation prioritaire
                     if not mob.dead and not mob.is_hit:
                         mob.position.x = mob_data["x"]
@@ -384,7 +387,7 @@ while True:
         parchment = load_parchment_image()
         parchment_open = False
         map_open = False
-        p = Player(map_manager.spawn1.x, map_manager.spawn1.y, 130)
+        p = Player(map_manager.spawn1.x, map_manager.spawn1.y, 130, interface=interface)
         map_manager.add_sprite(p, layer=19)
         map_manager.add_sprite(p.weapon, layer=18)
 
@@ -397,7 +400,10 @@ while True:
                     pygame.quit();
                     sys.exit()
                 if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
-                    break
+                    action = interface.run_pause_menu(win)
+                    if action == "menu":
+                        break
+                    continue
                 if event.type == pygame.KEYDOWN and event.key == pygame.K_a and event.mod & pygame.KMOD_CTRL:
                     p.toggle_god_mode()
                     continue
@@ -450,7 +456,7 @@ while True:
                     if p.weapon.hitbox:
                         for mob in map_manager.mobs:
                             if mob.alive and p.weapon.hitbox.colliderect(mob.hitbox):
-                                mob.take_damage(p.damage)
+                                mob.take_damage(p.damage, interface)
 
                     map_manager.update_progression(p)
                 victory = map_manager.is_victory_ready()
@@ -470,7 +476,8 @@ while True:
                 pygame.display.update()
                 continue
             break
-
+    elif choice == "options":
+        interface.run_options()
     elif choice == "multi":
         action = interface.run_multi_menu()
 

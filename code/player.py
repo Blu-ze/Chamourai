@@ -12,7 +12,7 @@ DODGE_COOLDOWN = 1000  # ms avant de pouvoir esquiver à nouveau
 DODGE_ANIMATION_SPEED = 60  # ms entre chaque frame de l'esquive
 
 class Player(animation.AnimateSprite):
-    def __init__(self, x, y, animation_speed, skin='player'):
+    def __init__(self, x, y, animation_speed, skin='player', interface=None):
         super().__init__(skin, animation_speed)
         self.position = pygame.math.Vector2(x, y)
         self.old_position = self.position.copy()
@@ -21,7 +21,10 @@ class Player(animation.AnimateSprite):
         self.god_mode = False
         self.state = "idle"
         self.feet = pygame.Rect(0, 0, self.rect.width * 0.5, 20)
-        self.weapon = Weapon('katana', x, y, 35)
+        self.weapon = Weapon('katana', x, y, 35, interface)
+        self.interface = interface
+        self._last_walk_sound = 0
+        self._walk_sound_delay = 400  # ms entre chaque son de pas
 
         self.hp    = MAX_HP
         self.alive = True
@@ -108,6 +111,7 @@ class Player(animation.AnimateSprite):
             return
 
         moving = False
+        now = pygame.time.get_ticks()
 
         # Axe X
         if keys[pygame.K_q]:
@@ -149,6 +153,11 @@ class Player(animation.AnimateSprite):
 
         if moving:
             self.state = "walk"
+            # Jouer le son de marche
+            if self.interface and 'walk' in self.interface.sounds:
+                if now - self._last_walk_sound > self._walk_sound_delay:
+                    self.interface.sounds['walk'].play()
+                    self._last_walk_sound = now
         else:
             self.state = "idle"
             self.current_image = 0
@@ -169,6 +178,8 @@ class Player(animation.AnimateSprite):
         self.dodging = True
         self.invincible = True
         self.state = "dodge"
+        if self.interface and 'dash' in self.interface.sounds:
+            self.interface.sounds['dash'].play()
 
         # Direction opposée à la souris
         mouse_pos = pygame.math.Vector2(pygame.mouse.get_pos())
