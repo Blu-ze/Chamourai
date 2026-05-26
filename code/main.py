@@ -177,6 +177,7 @@ def run_game(network, spawn_data, player_index=0):
             "y": p.position.y,
             "dir": p.direction,
             "state": p.state,
+            **p.get_dodge_state(),
             "hit": p.weapon.animation,
             "weapon_rect": weapon_rect,
             "weapon_angle": p.weapon.angle,
@@ -190,6 +191,10 @@ def run_game(network, spawn_data, player_index=0):
             p2.direction  = data["player"]["dir"]
             p2.state      = data["player"]["state"]
             p2.update()
+            p2.apply_remote_dodge_animation(
+                data["player"].get("dodging", False),
+                data["player"].get("dodge_frame", 0)
+            )
 
             other_data = data["player"]
             p2.weapon.apply_remote(
@@ -216,8 +221,7 @@ def run_game(network, spawn_data, player_index=0):
                         mob.direction  = mob_data["dir"]
                         mob.state      = mob_data["state"]
                     mob.update()
-                update_mob_projectiles(map_manager, p)
-        p2.update_animation()
+            update_mob_projectiles(map_manager, p)
         draw_health_bar(win, p.hp, MAX_HP)
 
         if not p.alive:
