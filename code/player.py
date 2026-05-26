@@ -231,3 +231,5 @@ class Player(animation.AnimateSprite):
     def update(self):
         self.rect.center = (self.position.x, self.position.y)
         self.feet.midbottom = self.rect.midbottom
+
+#test
