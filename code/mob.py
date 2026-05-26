@@ -1,5 +1,6 @@
 import pygame
 import animation
+import math
 from pathfinding import astar, build_collision_set
 
 DETECTION_RADIUS = 400
@@ -11,6 +12,11 @@ HIT_FLASH_DURATION = 200
 ATTACK_HIT_FRAME = 7
 ATTACK_LEFT_OFFSET = -30
 ATTACK_LEFT_OFFSET_Y = -10
+SKELETON_SPEED = 2.4
+SKELETON_ATTACK_SPEED_MULTIPLIER = 0.8
+SKELETON_RING_SLOTS = 8
+SKELETON_RING_DISTANCE = 34
+SKELETON_RING_GAP = 38
 
 NECROMANCER_MAX_HP = 100
 NECROMANCER_SPEED = 2.2
@@ -33,12 +39,17 @@ BOSS_ATTACK_COOLDOWN = 700
 GOLEM_MAX_HP = 1000
 GOLEM_DETECTION_RADIUS = 600
 GOLEM_RANGED_RADIUS = 360
-GOLEM_MELEE_RADIUS = 88
+GOLEM_MELEE_RADIUS = 108
 GOLEM_MELEE_HIT_FRAME = 4
 GOLEM_ATTACK_COOLDOWN = 900
 GOLEM_ARM_SHOOT_FRAME = 5
 GOLEM_ARM_SPEED = 7.0
 GOLEM_PROJECTILE_LIFE = 2200
+GOLEM_SHOCKWAVE_FRAME = 4
+GOLEM_SHOCKWAVE_SPEED = 4
+GOLEM_SHOCKWAVE_MAX_RADIUS = 370
+GOLEM_SHOCKWAVE_THICKNESS = 18
+GOLEM_SHOCKWAVE_HALF_ANGLE = 62
 GOLEM_DEATH_ANIMATION_SPEED = 160
 GOLEM_PHASE_TWO_SPEED_MULTIPLIER = 1.5
 GOLEM_PHASE_TWO_ATTACK_COOLDOWN = 550
@@ -151,6 +162,61 @@ class GolemProjectile(pygame.sprite.Sprite):
         super().kill()
 
 
+class GolemShockwave(pygame.sprite.Sprite):
+    def __init__(self, x, y, target_position, damage=1):
+        super().__init__()
+        self.position = pygame.math.Vector2(x, y)
+        direction = pygame.math.Vector2(target_position) - self.position
+        if direction.length_squared() == 0:
+            direction = pygame.math.Vector2(1, 0)
+        self.direction = direction.normalize()
+        self.radius = 24
+        self.active = True
+        self.damage = damage
+        self._added_to_group = False
+        self.hitbox = pygame.Rect(0, 0, 0, 0)
+        self._refresh_image()
+
+    def _refresh_image(self):
+        padding = GOLEM_SHOCKWAVE_THICKNESS + 5
+        size = (GOLEM_SHOCKWAVE_MAX_RADIUS + padding) * 2
+        self.image = pygame.Surface((size, size), pygame.SRCALPHA)
+        center = size // 2
+        arc_rect = pygame.Rect(0, 0, self.radius * 2, self.radius * 2)
+        arc_rect.center = (center, center)
+        heading = math.atan2(-self.direction.y, self.direction.x)
+        half_angle = math.radians(GOLEM_SHOCKWAVE_HALF_ANGLE)
+        pygame.draw.arc(
+            self.image,
+            (48, 171, 255, 230),
+            arc_rect,
+            heading - half_angle,
+            heading + half_angle,
+            GOLEM_SHOCKWAVE_THICKNESS,
+        )
+        self.rect = self.image.get_rect(center=self.position)
+
+    def update(self, collisions=None):
+        self.radius += GOLEM_SHOCKWAVE_SPEED
+        if self.radius > GOLEM_SHOCKWAVE_MAX_RADIUS:
+            self.kill()
+            return
+        self._refresh_image()
+
+    def hits_player(self, player_rect):
+        to_player = pygame.math.Vector2(player_rect.center) - self.position
+        if to_player.length_squared() == 0:
+            return True
+        player_extent = max(player_rect.width, player_rect.height) / 2
+        if abs(to_player.length() - self.radius) > GOLEM_SHOCKWAVE_THICKNESS + player_extent:
+            return False
+        return abs(self.direction.angle_to(to_player)) <= GOLEM_SHOCKWAVE_HALF_ANGLE
+
+    def kill(self):
+        self.active = False
+        super().kill()
+
+
 class Mob(animation.AnimateSprite):
     def __init__(self, name, x, y, animation_speed):
         super().__init__(name, animation_speed)
@@ -161,7 +227,12 @@ class Mob(animation.AnimateSprite):
         self.key_dropped = False
         self.position = pygame.math.Vector2(x, y)
         self.rect.center = self.position
-        base_speed = NECROMANCER_SPEED if name in NECROMANCER_TYPES else 2.0
+        if name in NECROMANCER_TYPES:
+            base_speed = NECROMANCER_SPEED
+        elif name in SKELETON_TYPES:
+            base_speed = SKELETON_SPEED
+        else:
+            base_speed = 2.0
         self.speed = base_speed * BOSS_SPEED_MULTIPLIER if self.is_boss else base_speed
         if self.is_boss:
             self.animation_speed = max(1, int(self.animation_speed * BOSS_ANIMATION_SPEED_MULTIPLIER))
@@ -205,6 +276,7 @@ class Mob(animation.AnimateSprite):
         self._phase_transition = False
         self._last_golem_attack_ms = -GOLEM_ATTACK_COOLDOWN
         self.golem_attack_cooldown = GOLEM_ATTACK_COOLDOWN
+        self._next_golem_ranged = "arm"
         self.damage = 1
 
     def init_pathfinding(self, collisions):
@@ -219,8 +291,13 @@ class Mob(animation.AnimateSprite):
         if self.mob_type in NECROMANCER_TYPES:
             self._update_necromancer_ai(player_position, collisions, now_ms, other_mobs)
             return
+        if self.mob_type in SKELETON_TYPES:
+            self._update_skeleton_ai(player_position, collisions, now_ms, other_mobs)
+            return
 
+    def _update_skeleton_ai(self, player_position, collisions, now_ms, other_mobs=None):
         try:
+            player_position = pygame.math.Vector2(player_position)
             dist = self.position.distance_to(player_position)
         except Exception:
             return
@@ -234,11 +311,33 @@ class Mob(animation.AnimateSprite):
             self.path = []
 
         if self.state == "chase":
-            self._chase(player_position, collisions, now_ms, other_mobs)
+            destination = self._skeleton_approach_position(player_position, other_mobs)
+            self._chase(destination, collisions, now_ms, other_mobs)
         elif self.state == "attack":
             self.path = []
             dx = player_position.x - self.position.x
             self.set_direction("left" if dx < 0 else "right")
+
+    def _skeleton_approach_position(self, player_position, other_mobs):
+        skeletons = [
+            mob for mob in (other_mobs or [self])
+            if mob.alive and not mob.dead and mob.mob_type in SKELETON_TYPES
+            and mob.position.distance_to(player_position) <= DETECTION_RADIUS
+        ]
+        skeletons.sort(key=lambda mob: mob.position.distance_to(player_position))
+        if len(skeletons) <= 1:
+            return player_position
+        try:
+            index = skeletons.index(self)
+        except ValueError:
+            return player_position
+
+        ring = index // SKELETON_RING_SLOTS
+        slot = index % SKELETON_RING_SLOTS
+        slot_count = min(SKELETON_RING_SLOTS, len(skeletons) - ring * SKELETON_RING_SLOTS)
+        angle = (2 * math.pi * slot / slot_count) + (ring % 2) * (math.pi / SKELETON_RING_SLOTS)
+        radius = SKELETON_RING_DISTANCE + ring * SKELETON_RING_GAP
+        return player_position + pygame.math.Vector2(math.cos(angle), math.sin(angle)) * radius
 
     def _update_necromancer_ai(self, player_position, collisions, now_ms, other_mobs=None):
         try:
@@ -304,8 +403,13 @@ class Mob(animation.AnimateSprite):
         self._attack_target = player_position.copy()
         if dist <= GOLEM_MELEE_RADIUS:
             self.attack_kind = "melee"
+        elif self.golem_phase == 2 and self._next_golem_ranged == "shockwave":
+            self.attack_kind = "shockwave"
+            self._next_golem_ranged = "arm"
         else:
             self.attack_kind = "arm"
+            if self.golem_phase == 2:
+                self._next_golem_ranged = "shockwave"
         self.state = "attack"
 
     def _chase(self, player_position, collisions, now_ms, other_mobs=None):
@@ -409,7 +513,10 @@ class Mob(animation.AnimateSprite):
                 self._attack_hit_done = False
                 self._projectile_shot_done = False
             self._prev_state = "attack"
-            finished = self._animate_frames(self._attack_animation_key())
+            frame_speed = None
+            if self.mob_type in SKELETON_TYPES:
+                frame_speed = max(1, int(self.animation_speed * SKELETON_ATTACK_SPEED_MULTIPLIER))
+            finished = self._animate_frames(self._attack_animation_key(), frame_speed)
             self._shoot_projectile_if_ready(now)
             self._shoot_golem_projectile_if_ready()
             self._position_rect(attacking=True)
@@ -541,6 +648,8 @@ class Mob(animation.AnimateSprite):
             return f"{self.anim_prefix}_attack"
         if self.attack_kind == "arm":
             return "golem_arm_shoot"
+        if self.attack_kind == "shockwave":
+            return "golem_shockwave_attack"
         return "golem_attack"
 
     def _shoot_golem_projectile_if_ready(self):
@@ -555,6 +664,13 @@ class Mob(animation.AnimateSprite):
                 (100, 100),
                 GOLEM_ARM_SPEED,
                 (46, 46),
+                damage=self.damage,
+            )
+        elif self.attack_kind == "shockwave" and self._frame_index == GOLEM_SHOCKWAVE_FRAME:
+            projectile = GolemShockwave(
+                self.position.x,
+                self.position.y,
+                self._attack_target,
                 damage=self.damage,
             )
         else:

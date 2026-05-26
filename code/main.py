@@ -195,7 +195,12 @@ def update_mob_projectiles(map_manager, player):
                 map_manager.add_sprite(projectile, layer=18)
                 projectile._added_to_group = True
             projectile.update(map_manager.collisions)
-            if projectile.active and player.alive and projectile.hitbox.colliderect(player.rect):
+            hits_player = (
+                projectile.hits_player(player.rect)
+                if hasattr(projectile, "hits_player")
+                else projectile.hitbox.colliderect(player.rect)
+            )
+            if projectile.active and player.alive and hits_player:
                 player.take_damage(getattr(projectile, "damage", 1))
                 projectile.kill()
                 continue

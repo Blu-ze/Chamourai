@@ -231,6 +231,9 @@ animations = {
     'golem_glowing': load_animation_images(
         'mobs/Golem/GolemGlowing', [800, 100], [100, 100], scale=2
     ),
+    'golem_shockwave_attack': load_animation_images(
+        'mobs/Golem/GolemLaser', [700, 100], [100, 100], scale=2
+    ),
     'golem_arm_shoot': load_animation_images(
         'mobs/Golem/GolemArmShoot', [900, 100], [100, 100], scale=2
     ),
