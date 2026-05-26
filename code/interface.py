@@ -210,18 +210,18 @@ class Interface:
             print(f"[SFX] Erreur chargement sons: {e}")
 
         try:
-            pygame.mixer.music.load(asset_path('assets/sounds/ambiance.mp3'))
+            pygame.mixer.music.load(asset_path('assets/sounds/ambiance.wav'))
             pygame.mixer.music.set_volume(self.volume)
             pygame.mixer.music.play(-1)  # -1 = boucle infinie
         except Exception as e:
-            print(f"[Musique] Impossible de charger assets/sounds/ambiance.mp3 : {e}")
+            print(f"[Musique] Impossible de charger assets/sounds/ambiance.wav : {e}")
 
         bw2, bh2 = 200, 55
         cx2 = (W - bw2) // 2
         self.options_buttons = [
-            Button("- Volume", cx2 - 110, H // 2, bw2, bh2, (70, 130, 240), (90, 150, 255)),
-            Button("+ Volume", cx2 + 110, H // 2, bw2, bh2, (70, 130, 240), (90, 150, 255)),
-            Button("Retour", cx2, H // 2 + 100, bw2, bh2, (120, 120, 120), (160, 160, 160)),
+            Button("- Volume", cx2 - 110, H // 2 - 10, bw2, bh2, (70, 130, 240), (90, 150, 255)),
+            Button("+ Volume", cx2 + 110, H // 2 - 10, bw2, bh2, (70, 130, 240), (90, 150, 255)),
+            Button("Retour", cx2, H // 2 + 200, bw2, bh2, (120, 120, 120), (160, 160, 160)),
         ]
 
     def _draw_bg(self):
@@ -490,73 +490,78 @@ class Interface:
         clock = pygame.time.Clock()
         W, H = self.screen_size
 
-        # Boutons pour SFX
+        # Boutons pour SFX — placés sous la barre SFX
         bw2, bh2 = 200, 55
         cx2 = (W - bw2) // 2
         sfx_buttons = [
-            Button("- SFX ", cx2 - 110, H // 2 + 120, bw2, bh2, (70, 130, 240), (90, 150, 255)),
-            Button("+ SFX ", cx2 + 110, H // 2 + 120, bw2, bh2, (70, 130, 240), (90, 150, 255)),
+            Button("- Effets", cx2 - 110, H // 2 + 110, bw2, bh2, (70, 130, 240), (90, 150, 255)),
+            Button("+ Effets", cx2 + 110, H // 2 + 110, bw2, bh2, (70, 130, 240), (90, 150, 255)),
         ]
+
+        bar_w = 400
+        bar_h = 20
+        bar_x = W // 2 - bar_w // 2
 
         while True:
             clicked = False
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
-                    pygame.quit()
+                    pygame.quit();
                     sys.exit()
                 if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                     clicked = True
 
             mouse = pygame.mouse.get_pos()
             self._draw_bg()
-            self._draw_text("Options ", self.font_title, (255, 255, 255), (W // 2, H // 2 - 200))
+            self._draw_text("Options", self.font_title, (255, 255, 255), (W // 2, H // 2 - 230))
 
-            # Volume musique
-            self._draw_text(f"Volume Musique : {int(self.volume * 100)}% ", self.font_normal, (255, 220, 50),
-                            (W // 2, H // 2 - 100))
-            bar_w = 400
-            bar_h = 20
-            bar_x = W // 2 - bar_w // 2
-            bar_y = H // 2 - 50
-            pygame.draw.rect(self.screen, (80, 80, 80), (bar_x, bar_y, bar_w, bar_h), border_radius=8)
-            pygame.draw.rect(self.screen, (70, 180, 255), (bar_x, bar_y, int(bar_w * self.volume), bar_h),
+            # --- Volume Musique ---
+            self._draw_text(f"Volume Musique : {int(self.volume * 100)}%", self.font_normal, (255, 220, 50),
+                            (W // 2, H // 2 - 155))
+            bar_y_music = H // 2 - 120
+            pygame.draw.rect(self.screen, (80, 80, 80), (bar_x, bar_y_music, bar_w, bar_h), border_radius=8)
+            pygame.draw.rect(self.screen, (70, 180, 255), (bar_x, bar_y_music, int(bar_w * self.volume), bar_h),
                              border_radius=8)
 
-            # Volume SFX
-            self._draw_text(f"Volume Effets : {int(self.sfx_volume * 100)}% ", self.font_normal, (255, 220, 50),
+            # Boutons + / - Volume (sous la barre musique)
+            for btn in self.options_buttons:
+                if btn.text in ("- Volume", "+ Volume"):
+                    btn.rect.y = H // 2 - 55
+                btn.check_hover(mouse)
+                btn.draw(self.screen)
+                if btn.is_clicked(mouse, clicked):
+                    if btn.text == "+ Volume":
+                        self.volume = min(1.0, self.volume + 0.1)
+                        pygame.mixer.music.set_volume(self.volume)
+                    elif btn.text == "- Volume":
+                        self.volume = max(0.0, self.volume - 0.1)
+                        pygame.mixer.music.set_volume(self.volume)
+                    elif btn.text == "Retour":
+                        return
+
+            # --- Volume Effets Sonores ---
+            self._draw_text(f"Volume Effets Sonores : {int(self.sfx_volume * 100)}%", self.font_normal, (255, 220, 50),
                             (W // 2, H // 2 + 20))
-            sfx_bar_y = H // 2 + 70
+            sfx_bar_y = H // 2 + 55
             pygame.draw.rect(self.screen, (80, 80, 80), (bar_x, sfx_bar_y, bar_w, bar_h), border_radius=8)
             pygame.draw.rect(self.screen, (255, 180, 70), (bar_x, sfx_bar_y, int(bar_w * self.sfx_volume), bar_h),
                              border_radius=8)
-        for btn in self.options_buttons:
-            btn.check_hover(mouse)
-            btn.draw(self.screen)
-            if btn.is_clicked(mouse, clicked):
-                if btn.text == "+ Volume ":
-                    self.volume = min(1.0, self.volume + 0.1)
-                    pygame.mixer.music.set_volume(self.volume)
-                elif btn.text == "- Volume ":
-                    self.volume = max(0.0, self.volume - 0.1)
-                    pygame.mixer.music.set_volume(self.volume)
-                elif btn.text == "Retour ":
-                    return
 
-        for btn in sfx_buttons:
-            btn.check_hover(mouse)
-            btn.draw(self.screen)
-            if btn.is_clicked(mouse, clicked):
-                if btn.text == "+ SFX ":
-                    self.sfx_volume = min(1.0, self.sfx_volume + 0.1)
-                    for sound in self.sounds.values():
-                        sound.set_volume(self.sfx_volume)
-                elif btn.text == "- SFX ":
-                    self.sfx_volume = max(0.0, self.sfx_volume - 0.1)
-                    for sound in self.sounds.values():
-                        sound.set_volume(self.sfx_volume)
+            for btn in sfx_buttons:
+                btn.check_hover(mouse)
+                btn.draw(self.screen)
+                if btn.is_clicked(mouse, clicked):
+                    if btn.text == "+ Effets":
+                        self.sfx_volume = min(1.0, self.sfx_volume + 0.1)
+                        for sound in self.sounds.values():
+                            sound.set_volume(self.sfx_volume)
+                    elif btn.text == "- Effets":
+                        self.sfx_volume = max(0.0, self.sfx_volume - 0.1)
+                        for sound in self.sounds.values():
+                            sound.set_volume(self.sfx_volume)
 
-        pygame.display.flip()
-        clock.tick(60)
+            pygame.display.flip()
+            clock.tick(60)
 
     def run_create_salon(self, network):
         import threading
@@ -702,29 +707,31 @@ class Interface:
         return result[0]
 
     def run_pause_menu(self, surface):
-        """
-        Affiche le menu pause par-dessus le jeu.
-        Retourne : "resume" | "menu"
-        """
         W, H = self.screen_size
         clock = pygame.time.Clock()
 
         bw, bh = 280, 55
         cx = (W - bw) // 2
-        btn_resume = Button("Reprendre", cx, H // 2 + 20, bw, bh, (60, 160, 60), (80, 200, 80))
-        btn_menu = Button("Menu principal", cx, H // 2 + 95, bw, bh, (180, 60, 60), (220, 80, 80))
+        btn_resume = Button("Reprendre", cx, H // 2 + 120, bw, bh, (60, 160, 60), (80, 200, 80))
+        btn_menu = Button("Menu principal", cx, H // 2 + 190, bw, bh, (180, 60, 60), (220, 80, 80))
 
         try:
-            volume = pygame.mixer.music.get_volume()
+            music_vol = pygame.mixer.music.get_volume()
         except Exception:
-            volume = 1.0
+            music_vol = 1.0
 
+        sfx_vol = self.sfx_volume
+
+        # Sliders
         slider_x = cx
-        slider_y = H // 2 - 60
+        music_slider_y = H // 2 - 60
+        sfx_slider_y = H // 2 + 10
         slider_w = bw
         slider_h = 8
         knob_r = 11
-        dragging = False
+
+        dragging_music = False
+        dragging_sfx = False
 
         font_title = pygame.font.Font(None, 72)
         font_label = pygame.font.Font(None, 30)
@@ -742,56 +749,75 @@ class Interface:
                     return "resume"
                 if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                     clicked = True
-                    knob_cx = slider_x + int(volume * slider_w)
-                    if math.hypot(mx - knob_cx, my - (slider_y + slider_h // 2)) <= knob_r + 4:
-                        dragging = True
+                    # Check Music Knob
+                    knob_cx = slider_x + int(music_vol * slider_w)
+                    if math.hypot(mx - knob_cx, my - (music_slider_y + slider_h // 2)) <= knob_r + 4:
+                        dragging_music = True
+                    # Check SFX Knob
+                    knob_sfx_x = slider_x + int(sfx_vol * slider_w)
+                    if math.hypot(mx - knob_sfx_x, my - (sfx_slider_y + slider_h // 2)) <= knob_r + 4:
+                        dragging_sfx = True
+
                 if event.type == pygame.MOUSEBUTTONUP and event.button == 1:
-                    dragging = False
-                if event.type == pygame.MOUSEMOTION and dragging:
-                    volume = max(0.0, min(1.0, (mx - slider_x) / slider_w))
-                    try:
-                        pygame.mixer.music.set_volume(volume)
-                    except Exception:
-                        pass
+                    dragging_music = False
+                    dragging_sfx = False
+
+                if event.type == pygame.MOUSEMOTION:
+                    if dragging_music:
+                        music_vol = max(0.0, min(1.0, (mx - slider_x) / slider_w))
+                        try:
+                            pygame.mixer.music.set_volume(music_vol)
+                        except:
+                            pass
+                    if dragging_sfx:
+                        sfx_vol = max(0.0, min(1.0, (mx - slider_x) / slider_w))
+                        self.sfx_volume = sfx_vol
+                        for sound in self.sounds.values():
+                            sound.set_volume(sfx_vol)
 
             # Fond semi-transparent
             overlay = pygame.Surface((W, H), pygame.SRCALPHA)
             overlay.fill((10, 10, 20, 175))
             surface.blit(overlay, (0, 0))
 
-            # Panneau central
-            panel_w, panel_h = 360, 310
+            # Panneau central (assez grand pour sliders + 2 boutons)
+            panel_w, panel_h = 380, 460
             panel_x = (W - panel_w) // 2
-            panel_y = H // 2 - 155
+            panel_y = H // 2 - 190
             panel = pygame.Surface((panel_w, panel_h), pygame.SRCALPHA)
             panel.fill((20, 22, 40, 220))
             pygame.draw.rect(panel, (90, 130, 255, 120), (0, 0, panel_w, panel_h), 2, border_radius=14)
             surface.blit(panel, (panel_x, panel_y))
 
             # Titre
-            txt = font_title.render("PAUSE", True, (220, 220, 255))
-            surface.blit(txt, txt.get_rect(center=(W // 2, panel_y + 52)))
+            txt = font_title.render("PAUSE ", True, (220, 220, 255))
+            surface.blit(txt, txt.get_rect(center=(W // 2, panel_y + 50)))
 
-            # Label volume
-            label = font_label.render(f"Volume  {int(volume * 100):3d}%", True, (190, 190, 230))
-            surface.blit(label, label.get_rect(center=(W // 2, slider_y - 18)))
+            # Label Volume Musique
+            label_music = font_label.render(f"Musique {int(music_vol * 100):3d}% ", True, (190, 190, 230))
+            surface.blit(label_music, label_music.get_rect(center=(W // 2, music_slider_y - 18)))
 
-            # Track
-            pygame.draw.rect(surface, (50, 50, 80),
-                             pygame.Rect(slider_x, slider_y, slider_w, slider_h), border_radius=4)
-
-            # Remplissage
-            fill_w = int(volume * slider_w)
-            if fill_w > 0:
-                fill_col = (int(80 + 120 * volume), int(130 + 50 * (1 - volume)), 220)
-                pygame.draw.rect(surface, fill_col,
-                                 pygame.Rect(slider_x, slider_y, fill_w, slider_h), border_radius=4)
-
-            # Knob
+            # Track Musique
+            pygame.draw.rect(surface, (50, 50, 80), pygame.Rect(slider_x, music_slider_y, slider_w, slider_h),
+                             border_radius=4)
+            fill_w = int(music_vol * slider_w)
+            pygame.draw.rect(surface, (70, 180, 255), pygame.Rect(slider_x, music_slider_y, fill_w, slider_h),
+                             border_radius=4)
             knob_cx = slider_x + fill_w
-            knob_cy = slider_y + slider_h // 2
-            pygame.draw.circle(surface, (200, 210, 255), (knob_cx, knob_cy), knob_r)
-            pygame.draw.circle(surface, (100, 120, 255), (knob_cx, knob_cy), knob_r, 2)
+            pygame.draw.circle(surface, (200, 210, 255), (knob_cx, music_slider_y + slider_h // 2), knob_r)
+
+            # Label Volume Effets
+            label_sfx = font_label.render(f"Effets {int(sfx_vol * 100):3d}% ", True, (190, 190, 230))
+            surface.blit(label_sfx, label_sfx.get_rect(center=(W // 2, sfx_slider_y - 18)))
+
+            # Track SFX
+            pygame.draw.rect(surface, (50, 50, 80), pygame.Rect(slider_x, sfx_slider_y, slider_w, slider_h),
+                             border_radius=4)
+            fill_w_sfx = int(sfx_vol * slider_w)
+            pygame.draw.rect(surface, (255, 180, 70), pygame.Rect(slider_x, sfx_slider_y, fill_w_sfx, slider_h),
+                             border_radius=4)
+            knob_sfx_x = slider_x + fill_w_sfx
+            pygame.draw.circle(surface, (200, 210, 255), (knob_sfx_x, sfx_slider_y + slider_h // 2), knob_r)
 
             # Boutons
             for btn in (btn_resume, btn_menu):
@@ -842,75 +868,6 @@ class Interface:
                     return ip_text
                 else:
                     error = "IP invalide (ex: 192.168.1.10)"
-
-            pygame.display.flip()
-            clock.tick(60)
-
-    def run_options(self):
-        clock = pygame.time.Clock()
-        W, H = self.screen_size
-
-        bw2, bh2 = 200, 55
-        cx2 = (W - bw2) // 2
-        sfx_buttons = [
-            Button("- SFX", cx2 - 110, H // 2 + 120, bw2, bh2, (70, 130, 240), (90, 150, 255)),
-            Button("+ SFX", cx2 + 110, H // 2 + 120, bw2, bh2, (70, 130, 240), (90, 150, 255)),
-        ]
-
-        while True:
-            clicked = False
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    pygame.quit();
-                    sys.exit()
-                if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-                    clicked = True
-
-            mouse = pygame.mouse.get_pos()
-            self._draw_bg()
-            self._draw_text("Options", self.font_title, (255, 255, 255), (W // 2, H // 2 - 200))
-            self._draw_text(f"Volume Musique : {int(self.volume * 100)} %", self.font_normal, (255, 220, 50),
-                            (W // 2, H // 2 - 100))
-
-            # Barre de volume visuelle
-            bar_w = 400
-            bar_h = 20
-            bar_x = W // 2 - bar_w // 2
-            bar_y = H // 2 - 50
-            pygame.draw.rect(self.screen, (80, 80, 80), (bar_x, bar_y, bar_w, bar_h), border_radius=8)
-            pygame.draw.rect(self.screen, (70, 180, 255), (bar_x, bar_y, int(bar_w * self.volume), bar_h),
-                             border_radius=8)
-
-            self._draw_text(f"Volume Effets : {int(self.sfx_volume * 100)} %", self.font_normal, (255, 220, 50),
-                            (W // 2, H // 2 + 20))
-            sfx_bar_y = H // 2 + 70
-            pygame.draw.rect(self.screen, (80, 80, 80), (bar_x, sfx_bar_y, bar_w, bar_h), border_radius=8)
-            pygame.draw.rect(self.screen, (255, 180, 70), (bar_x, sfx_bar_y, int(bar_w * self.sfx_volume), bar_h),
-                             border_radius=8)
-
-            for btn in self.options_buttons:
-                btn.check_hover(mouse)
-                btn.draw(self.screen)
-                if btn.is_clicked(mouse, clicked):
-                    if btn.text == "+ Volume":
-                        self.volume = min(1.0, self.volume + 0.1)
-                        pygame.mixer.music.set_volume(self.volume)
-                    elif btn.text == "- Volume":
-                        self.volume = max(0.0, self.volume - 0.1)
-                        pygame.mixer.music.set_volume(self.volume)
-                    elif btn.text == "Retour":
-                        return
-
-            for btn in sfx_buttons:
-                btn.check_hover(mouse)
-                btn.draw(self.screen)
-                if btn.is_clicked(mouse, clicked):
-                    if btn.text == "+ SFX":
-                        self.sfx_volume = min(1.0, self.sfx_volume + 0.1)
-                    elif btn.text == "- SFX":
-                        self.sfx_volume = max(0.0, self.sfx_volume - 0.1)
-                    for sound in self.sounds.values():
-                        sound.set_volume(self.sfx_volume)
 
             pygame.display.flip()
             clock.tick(60)
