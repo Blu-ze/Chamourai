@@ -1,0 +1,17 @@
+\babel@toc {french}{}\relax 
+\contentsline {section}{\numberline {1}Introduction}{3}{}%
+\contentsline {section}{\numberline {2}Rôles}{3}{}%
+\contentsline {section}{\numberline {3}Fonctionnalités}{3}{}%
+\contentsline {section}{\numberline {4}Le guidage de l’épée par le curseur}{4}{}%
+\contentsline {section}{\numberline {5}Avancement du projet}{5}{}%
+\contentsline {subsection}{\numberline {5.1}Graphismes}{5}{}%
+\contentsline {subsection}{\numberline {5.2}Interface}{5}{}%
+\contentsline {subsection}{\numberline {5.3}Musiques et sons}{6}{}%
+\contentsline {subsection}{\numberline {5.4}Mécaniques de jeu}{6}{}%
+\contentsline {subsection}{\numberline {5.5}Intelligence artificielle}{7}{}%
+\contentsline {subsection}{\numberline {5.6}Multijoueur}{7}{}%
+\contentsline {section}{\numberline {6}Mode de communication}{8}{}%
+\contentsline {section}{\numberline {7}Dynamique de groupe}{9}{}%
+\contentsline {subsection}{\numberline {7.1}Réunions hebdomadaires}{9}{}%
+\contentsline {subsection}{\numberline {7.2}Gestion des tâches}{9}{}%
+\contentsline {section}{\numberline {8}Annexes}{10}{}%

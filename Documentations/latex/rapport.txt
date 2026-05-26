@@ -1,0 +1,170 @@
+\documentclass[a4paper,12pt]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[french]{babel}
+\usepackage{graphicx}
+\usepackage{geometry}
+\usepackage{array}
+\usepackage{titlesec}
+\usepackage{setspace}
+
+\geometry{margin=2.5cm}
+\setstretch{1.2}
+
+\title{\textbf{Chamouraï} \\ Rapport de soutenance}
+\author{}
+\date{}
+
+\begin{document}
+
+\maketitle
+
+\begin{center}
+    \includegraphics[width=0.6\textwidth]{titre.png}
+    
+    \vspace{1cm}
+    
+    \includegraphics[width=0.4\textwidth]{logo.png}
+\end{center}
+
+\newpage
+
+\tableofcontents
+
+\newpage
+
+\section{Introduction}
+
+Chamouraï est un jeu de rôle d’action dans lequel le joueur affronte des monstres au sein d’un univers immersif. Le joueur évolue à travers différents niveaux soigneusement construits et doit faire face à des ennemis variés.
+
+Le jeu s’inscrit dans une philosophie de type \textit{« mourir et recommencer »}. Le joueur est ainsi amené à recommencer plusieurs fois les niveaux afin d’en comprendre les mécaniques, d’améliorer sa stratégie et de progresser.
+
+\section{Répartition des rôles}
+
+\begin{center}
+\begin{tabular}{|m{5cm}|m{8cm}|}
+\hline
+\textbf{Membre} & \textbf{Responsabilités} \\
+\hline
+Baptiste LOISEAU & Chef de projet, niveaux/cartes, jouabilité, graphismes \\
+\hline
+Lucas HUET & Interface, sons \\
+\hline
+Loan BLANPAIN & Site web, scénario \\
+\hline
+Simon BOURGEOIS & Intelligence artificielle, multijoueur \\
+\hline
+\end{tabular}
+\end{center}
+
+\section{Fonctionnalités}
+
+\begin{itemize}
+    \item \textbf{Intelligence artificielle} : gestion des déplacements des ennemis via un système de pathfinding.
+    \item \textbf{Multijoueur} : mode coopératif en pair à pair nécessitant une connexion au même réseau local.
+    \item \textbf{Graphismes} : style 2D pixel art avec une vue du dessus.
+    \item \textbf{Sons} : musiques et effets sonores immersifs.
+\end{itemize}
+
+\section{Guidage de l’épée par le curseur}
+
+Ce système constitue un élément central du gameplay, apportant dynamisme et précision. Il nécessite une coordination entre le clavier et la souris, rendant le combat plus technique.
+
+Le fonctionnement est le suivant :
+
+\begin{itemize}
+    \item Récupération des coordonnées de la souris et du joueur à l’écran.
+    
+    \includegraphics[width=0.6\textwidth]{code1.png}
+
+    \item Calcul du vecteur directionnel entre le joueur et la souris.
+    
+    \includegraphics[width=0.6\textwidth]{code2.png}
+
+    \item Détermination du côté (gauche/droite) pour sélectionner le sprite approprié.
+    
+    \includegraphics[width=0.6\textwidth]{code3.png}
+
+    \item Calcul de l’angle à l’aide de la fonction trigonométrique \texttt{atan2}, permettant d’obtenir une orientation précise.
+    
+    \includegraphics[width=0.6\textwidth]{code4.png}
+
+    \item Conversion de l’angle en degrés.
+    
+    \includegraphics[width=0.6\textwidth]{code5.png}
+
+    \item Rotation de l’image de l’épée en fonction de cet angle.
+    
+    \includegraphics[width=0.6\textwidth]{code6.png}
+
+    \item Ajustement du point de rotation afin que l’épée pivote autour de la main du personnage, puis mise à jour de sa position.
+    
+    \includegraphics[width=0.6\textwidth]{code7.png}
+\end{itemize}
+
+Ce système permet un contrôle fluide et précis, améliorant fortement les sensations de combat.
+
+\section{Avancement du projet}
+
+\subsection{Graphismes}
+
+Le personnage principal a été généré à l’aide d’une intelligence artificielle puis retravaillé afin de correspondre aux besoins du projet. Les animations ont été réalisées manuellement.
+
+Les éléments graphiques (tuiles, monstres) proviennent de la plateforme Itch.io et ont été sélectionnés pour assurer une cohérence visuelle. Tous les assets utilisés sont libres de droit.
+
+\subsection{Interface}
+
+L’interface est simple, intuitive et cohérente avec l’univers du jeu. Le menu principal permet de lancer une partie solo, d’accéder au mode multijoueur ou de quitter le jeu.
+
+Le mode multijoueur propose :
+\begin{itemize}
+    \item la création d’un salon avec génération d’un code,
+    \item la possibilité de rejoindre une partie via ce code et une adresse IP.
+\end{itemize}
+
+Le menu « Options » n’est pas encore implémenté.
+
+\subsection{Musiques et sons}
+
+Les ressources sonores ont été sélectionnées sur la plateforme Freesound. Elles ont été organisées de manière structurée afin de faciliter leur utilisation et leur maintenance.
+
+\subsection{Mécaniques de jeu}
+
+Le jeu repose sur un système de combat dynamique nécessitant précision et timing. Le joueur doit apprendre les comportements ennemis et adapter sa stratégie pour progresser.
+
+\subsection{Intelligence artificielle}
+
+L’intelligence artificielle repose sur un algorithme de recherche de plus court chemin. Après étude de plusieurs solutions (Dijkstra, A*), l’algorithme A* a été retenu pour son efficacité dans la recherche d’un chemin optimal.
+
+Son implémentation a nécessité une compréhension approfondie de son fonctionnement ainsi que des ajustements liés à la gestion des collisions et des obstacles.
+
+Malgré des améliorations significatives, certains cas problématiques subsistent, notamment lorsque les ennemis restent bloqués.
+
+\subsection{Multijoueur}
+
+Le jeu utilise une architecture pair à pair. Un joueur joue le rôle d’hôte et héberge la partie, assurant la gestion des échanges de données.
+
+Les joueurs peuvent rejoindre une partie via un code. Les informations (positions, actions) sont échangées en continu. L’intelligence artificielle et la gestion des collisions sont exécutées côté hôte afin de garantir la cohérence du jeu et limiter les risques de triche.
+
+\section{Mode de communication}
+
+Un serveur Discord a été utilisé pour faciliter la communication. Il permet des échanges rapides via des canaux textuels et vocaux, le partage de ressources et une meilleure coordination du travail.
+
+\section{Dynamique de groupe}
+
+\subsection{Réunions hebdomadaires}
+
+Un point hebdomadaire est organisé chaque jeudi afin de suivre l’avancement du projet, résoudre les problèmes et ajuster les priorités.
+
+\subsection{Gestion des tâches}
+
+Un tableau MeisterTask est utilisé pour organiser le travail. Chaque membre doit avoir une tâche en cours, garantissant une progression continue et une bonne répartition des responsabilités.
+
+\section{Visuel et style du jeu}
+
+Chamouraï propose un univers immersif avec des décors détaillés créés via Tiled. Le jeu utilise un système de calques permettant une meilleure profondeur visuelle (passage derrière les objets, etc.).
+
+Plusieurs environnements sont présents, tels que la forêt, le désert ou encore la neige, renforçant la diversité visuelle du jeu.
+
+\end{document}
