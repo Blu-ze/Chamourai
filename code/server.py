@@ -7,6 +7,7 @@ import os
 import threading
 import random
 from mob import Mob
+from player import PLAYER_DAMAGE
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -25,8 +26,18 @@ def get_optional_object(name):
     except (KeyError, ValueError):
         return None
 
-mob_spawns = [("skeleton", obj) for obj in tmx_data.objects if obj.name == "Skeleton"]
-mob_spawns += [("necromancer", obj) for obj in tmx_data.objects if obj.name == "Necromancer"]
+MOB_TYPES_BY_OBJECT_NAME = {
+    "Skeleton": "skeleton",
+    "SkeletonBoss": "skeleton_boss",
+    "Necromancer": "necromancer",
+    "NecromancerBoss": "necromancer_boss",
+    "Golem": "golem",
+}
+mob_spawns = [
+    (MOB_TYPES_BY_OBJECT_NAME[obj.name], obj)
+    for obj in tmx_data.objects
+    if obj.name in MOB_TYPES_BY_OBJECT_NAME
+]
 if not mob_spawns:
     legacy_spawn = get_optional_object("MobSpawn")
     if legacy_spawn:
@@ -241,7 +252,7 @@ def threaded_client(conn):
                             if not skeleton.alive:
                                 continue
                             if wr.colliderect(skeleton.hitbox):
-                                skeleton.take_damage(1)
+                                skeleton.take_damage(PLAYER_DAMAGE)
                                 mobs[index] = mob_to_dict(skeleton)
                                 salons[code]["mobs"] = mobs
                                 salons[code]["mob"] = mobs[0] if mobs else None
