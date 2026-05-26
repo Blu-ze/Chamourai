@@ -7,6 +7,15 @@ import math
 
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+MASTER_AUDIO_VOLUME_MULTIPLIER = 0.64
+LEVEL_MUSIC_VOLUME_MULTIPLIER = 0.75
+SFX_VOLUME_MULTIPLIERS = {
+    'slash': 2 / 7,
+    'walk_grass': 4 / 7,
+    'walk2': 1.0,
+    'dash': 10 / 7,
+    'kill': 2 / 7,
+}
 
 def asset_path(relative_path):
     return os.path.join(BASE_DIR, relative_path)
@@ -194,28 +203,25 @@ class Interface:
         self.font_small  = pygame.font.Font(None, 28)
         self.volume = 0.5
         self.sfx_volume = 0.7
+        self.current_music_track = 'ambiance'
 
         # Sons d'effets
         self.sounds = {}
         try:
             self.sounds['slash'] = pygame.mixer.Sound(asset_path('assets/sounds/slash.ogg'))
-            self.sounds['walk'] = pygame.mixer.Sound(asset_path('assets/sounds/walk.wav'))
+            self.sounds['walk_grass'] = pygame.mixer.Sound(asset_path('assets/sounds/walk.wav'))
+            self.sounds['walk2'] = pygame.mixer.Sound(asset_path('assets/sounds/walk2.wav'))
+            self.sounds['walk'] = self.sounds['walk_grass']  # son actif par défaut
             self.sounds['dash'] = pygame.mixer.Sound(asset_path('assets/sounds/dash.wav'))
             self.sounds['kill'] = pygame.mixer.Sound(asset_path('assets/sounds/kill.wav'))
 
-            # Appliquer le volume SFX
-            for sound in self.sounds.values():
-                sound.set_volume(self.sfx_volume)
-            self.sounds['dash'].set_volume(1.0)
-            self.sounds['walk'].set_volume(0.2)
-            self.sounds['kill'].set_volume(0.2)
-            self.sounds['slash'].set_volume(0.2)
+            self._apply_sfx_volume()
         except Exception as e:
             print(f"[SFX] Erreur chargement sons: {e}")
 
         try:
             pygame.mixer.music.load(asset_path('assets/sounds/ambiance.wav'))
-            pygame.mixer.music.set_volume(self.volume)
+            self._apply_music_volume()
             pygame.mixer.music.play(-1)  # -1 = boucle infinie
         except Exception as e:
             print(f"[Musique] Impossible de charger assets/sounds/ambiance.wav : {e}")
@@ -227,6 +233,20 @@ class Interface:
             Button("+ Volume", cx2 + 110, H // 2 - 10, bw2, bh2, (70, 130, 240), (90, 150, 255)),
             Button("Retour", cx2, H // 2 + 200, bw2, bh2, (120, 120, 120), (160, 160, 160)),
         ]
+    def _apply_music_volume(self):
+        level_track = self.current_music_track in ('cave', 'boss')
+        multiplier = LEVEL_MUSIC_VOLUME_MULTIPLIER if level_track else 1.0
+        pygame.mixer.music.set_volume(
+            min(1.0, self.volume * multiplier * MASTER_AUDIO_VOLUME_MULTIPLIER)
+        )
+
+    def _apply_sfx_volume(self):
+        for name, multiplier in SFX_VOLUME_MULTIPLIERS.items():
+            if name in self.sounds:
+                self.sounds[name].set_volume(
+                    min(1.0, self.sfx_volume * multiplier * MASTER_AUDIO_VOLUME_MULTIPLIER)
+                )
+
     def play_music(self, track_name, fadeout_ms=800, fadein_ms=0):
         """Change la musique en cours. track_name = nom sans extension (ex: 'cave', 'boss')."""
         try:
@@ -236,13 +256,22 @@ class Interface:
             if not os.path.exists(path):
                 path = asset_path(f'assets/sounds/{track_name}.wav')
             pygame.mixer.music.load(path)
-            pygame.mixer.music.set_volume(self.volume)
+            self.current_music_track = track_name
+            self._apply_music_volume()
             if fadein_ms:
                 pygame.mixer.music.play(-1, fade_ms=fadein_ms)
             else:
                 pygame.mixer.music.play(-1)
         except Exception as e:
             print(f"[Musique] Impossible de jouer '{track_name}' : {e}")
+
+    def set_walk_surface(self, surface_name):
+        """Change le son de pas actif. surface_name = 'grass' ou 'cave'."""
+        if surface_name == 'cave' and 'walk2' in self.sounds:
+            self.sounds['walk'] = self.sounds['walk2']
+        elif surface_name == 'grass' and 'walk_grass' in self.sounds:
+            self.sounds['walk'] = self.sounds['walk_grass']
+
     def _draw_bg(self):
         if self.background:
             self.screen.blit(self.background, (0, 0))
@@ -263,6 +292,7 @@ class Interface:
     def run_main_menu(self):
         clock = pygame.time.Clock()
         W, H  = self.screen_size
+        self.play_music('ambiance', fadeout_ms=600, fadein_ms=800)
         while True:
             clicked = False
             for event in pygame.event.get():
@@ -561,10 +591,10 @@ class Interface:
                 if btn.is_clicked(mouse, clicked):
                     if btn.text == "+ Volume":
                         self.volume = min(1.0, self.volume + 0.1)
-                        pygame.mixer.music.set_volume(self.volume)
+                        self._apply_music_volume()
                     elif btn.text == "- Volume":
                         self.volume = max(0.0, self.volume - 0.1)
-                        pygame.mixer.music.set_volume(self.volume)
+                        self._apply_music_volume()
                     elif btn.text == "Retour":
                         return
 
@@ -582,12 +612,10 @@ class Interface:
                 if btn.is_clicked(mouse, clicked):
                     if btn.text == "+ Effets":
                         self.sfx_volume = min(1.0, self.sfx_volume + 0.1)
-                        for sound in self.sounds.values():
-                            sound.set_volume(self.sfx_volume)
+                        self._apply_sfx_volume()
                     elif btn.text == "- Effets":
                         self.sfx_volume = max(0.0, self.sfx_volume - 0.1)
-                        for sound in self.sounds.values():
-                            sound.set_volume(self.sfx_volume)
+                        self._apply_sfx_volume()
 
             pygame.display.flip()
             clock.tick(60)
@@ -749,11 +777,7 @@ class Interface:
         btn_resume = Button("Reprendre", cx, H // 2 + 120, bw, bh, (60, 160, 60), (80, 200, 80))
         btn_menu = Button("Menu principal", cx, H // 2 + 190, bw, bh, (180, 60, 60), (220, 80, 80))
 
-        try:
-            music_vol = pygame.mixer.music.get_volume()
-        except Exception:
-            music_vol = 1.0
-
+        music_vol = self.volume
         sfx_vol = self.sfx_volume
 
         # Sliders
@@ -800,14 +824,14 @@ class Interface:
                     if dragging_music:
                         music_vol = max(0.0, min(1.0, (mx - slider_x) / slider_w))
                         try:
-                            pygame.mixer.music.set_volume(music_vol)
+                            self.volume = music_vol
+                            self._apply_music_volume()
                         except:
                             pass
                     if dragging_sfx:
                         sfx_vol = max(0.0, min(1.0, (mx - slider_x) / slider_w))
                         self.sfx_volume = sfx_vol
-                        for sound in self.sounds.values():
-                            sound.set_volume(sfx_vol)
+                        self._apply_sfx_volume()
 
             # Fond semi-transparent
             overlay = pygame.Surface((W, H), pygame.SRCALPHA)

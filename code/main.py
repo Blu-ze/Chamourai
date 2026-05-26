@@ -38,40 +38,46 @@ class ObjectiveTracker:
             self.step += 1
             self.progress = 0
 
-    def record_attack(self):
+    def talked_to_oldman(self):
         if self.step == 0:
-            self.progress += 1
-            self._advance_at(3)
+            self.step = 1
+            self.progress = 0
 
-    def record_dodge(self):
+    def record_attack(self):
         if self.step == 1:
             self.progress += 1
             self._advance_at(3)
 
-    def update_forest_skeleton_kills(self, killed):
+    def record_dodge(self):
         if self.step == 2:
+            self.progress += 1
+            self._advance_at(3)
+
+    def update_forest_skeleton_kills(self, killed):
+        if self.step == 3:
             self.progress = min(3, killed)
             self._advance_at(3)
 
     def can_enter_dungeon(self):
-        return self.step >= 3
+        return self.step >= 4
 
     def entered_dungeon(self):
-        if self.step == 3:
-            self.step = 4
-            self.progress = 0
-
-    def opened_map(self):
         if self.step == 4:
             self.step = 5
             self.progress = 0
 
-    def update_keys(self, count):
+    def opened_map(self):
         if self.step == 5:
+            self.step = 6
+            self.progress = 0
+
+    def update_keys(self, count):
+        if self.step == 6:
             self.progress = min(2, count)
 
     def label_and_progress(self):
         objectives = (
+            ("Parler au vieil homme", None),
             ("Frapper 3 fois", 3),
             ("Esquiver 3 fois", 3),
             ("Tuer 3 squelettes dans la foret", 3),
@@ -297,7 +303,7 @@ def restart_multiplayer_dungeon(map_manager, player, other_player, player_index,
         [(player, 19), (other_player, 19), (player.weapon, 18), (other_player.weapon, 18)],
         player_index=player_index,
     )
-    objectives.step = 4
+    objectives.step = 5
     objectives.progress = 0
 
 
@@ -306,12 +312,13 @@ def restart_solo_dungeon():
     player = Player(manager.spawn1.x, manager.spawn1.y, 130, interface=interface)
     manager.place_player_on_level(player, [(player, 19), (player.weapon, 18)])
     objectives = ObjectiveTracker()
-    objectives.step = 4
+    objectives.step = 5
     return manager, player, objectives
 
 
 def run_game(network, spawn_data, player_index=0):
     map_manager = MapManager(screen_size)
+    interface.set_walk_surface("grass")
     parchment = load_parchment_image()
     parchment_open = False
     map_open = False
@@ -340,16 +347,19 @@ def run_game(network, spawn_data, player_index=0):
                 if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                     menu, restart = defeat_button_rects(win)
                     if menu.collidepoint(event.pos):
+                        interface.set_walk_surface("grass")
                         return
                     if restart.collidepoint(event.pos):
                         restart_vote = True
                 continue
             if not p.alive:
                 if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1 and spectator_menu_button_rect(win).collidepoint(event.pos):
+                    interface.set_walk_surface("grass")
                     return
                 continue
             if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
                 if interface.run_pause_menu(win) == "menu":
+                    interface.set_walk_surface("grass")
                     return
                 continue
             if event.type == pygame.KEYDOWN and event.key == pygame.K_a and event.mod & pygame.KMOD_CTRL:
@@ -357,6 +367,7 @@ def run_game(network, spawn_data, player_index=0):
                 continue
             if victory:
                 if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1 and victory_button_rect(win).collidepoint(event.pos):
+                    interface.set_walk_surface("grass")
                     return
                 continue
             if event.type == pygame.KEYDOWN and event.key == pygame.K_m and map_manager.current_map == "level":
@@ -365,7 +376,10 @@ def run_game(network, spawn_data, player_index=0):
                     objectives.opened_map()
             if event.type == pygame.KEYDOWN and event.key == pygame.K_e:
                 if not map_open and not map_manager.try_open_grid(p) and (parchment_open or is_near_oldman(map_manager, p)):
+                    opening_parchment = not parchment_open
                     parchment_open = not parchment_open
+                    if opening_parchment:
+                        objectives.talked_to_oldman()
             if not parchment_open and not map_open and event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                 before = p.weapon.attack_id
                 p.weapon.hit()
@@ -413,10 +427,12 @@ def run_game(network, spawn_data, player_index=0):
                 boss_music_started = False
                 restart_multiplayer_dungeon(map_manager, p, p2, player_index, objectives)
                 interface.play_music("cave", fadeout_ms=800, fadein_ms=1200)
+                interface.set_walk_surface("cave")
             if data.get("current_map") == "level" and map_manager.current_map == "spawn":
                 map_manager.place_player_on_level(p, [(p, 19), (p2, 19), (p.weapon, 18), (p2.weapon, 18)], player_index=player_index)
                 objectives.entered_dungeon()
                 interface.play_music("cave", fadeout_ms=800, fadein_ms=1200)
+                interface.set_walk_surface("cave")
             if data.get("grid_open") and map_manager.current_map == "level":
                 map_manager.open_grid()
             if map_manager.grid_open and not boss_music_started:
@@ -493,6 +509,7 @@ def run_game(network, spawn_data, player_index=0):
 
 def run_solo():
     map_manager = MapManager(screen_size)
+    interface.set_walk_surface("grass")
     parchment = load_parchment_image()
     parchment_open = False
     map_open = False
@@ -514,6 +531,7 @@ def run_solo():
                 if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                     menu, restart = paired_buttons(win, win.get_height() // 2 + 58)
                     if menu.collidepoint(event.pos):
+                        interface.set_walk_surface("grass")
                         return
                     if restart.collidepoint(event.pos):
                         map_manager, p, objectives = restart_solo_dungeon()
@@ -521,9 +539,11 @@ def run_solo():
                         map_open = False
                         boss_music_started = False
                         interface.play_music("cave", fadeout_ms=800, fadein_ms=1200)
+                        interface.set_walk_surface("cave")
                 continue
             if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
                 if interface.run_pause_menu(win) == "menu":
+                    interface.set_walk_surface("grass")
                     return
                 continue
             if event.type == pygame.KEYDOWN and event.key == pygame.K_a and event.mod & pygame.KMOD_CTRL:
@@ -531,6 +551,7 @@ def run_solo():
                 continue
             if victory:
                 if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1 and victory_button_rect(win).collidepoint(event.pos):
+                    interface.set_walk_surface("grass")
                     return
                 continue
             if event.type == pygame.KEYDOWN and event.key == pygame.K_m and map_manager.current_map == "level":
@@ -539,7 +560,10 @@ def run_solo():
                     objectives.opened_map()
             if event.type == pygame.KEYDOWN and event.key == pygame.K_e:
                 if not map_open and not map_manager.try_open_grid(p) and (parchment_open or is_near_oldman(map_manager, p)):
+                    opening_parchment = not parchment_open
                     parchment_open = not parchment_open
+                    if opening_parchment:
+                        objectives.talked_to_oldman()
             if not parchment_open and not map_open and event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                 before = p.weapon.attack_id
                 p.weapon.hit()
@@ -558,6 +582,7 @@ def run_solo():
             if objectives.can_enter_dungeon() and map_manager.teleport_to_level_if_needed(p, [(p, 19), (p.weapon, 18)]):
                 objectives.entered_dungeon()
                 interface.play_music("cave", fadeout_ms=800, fadein_ms=1200)
+                interface.set_walk_surface("cave")
         if p.alive:
             update_oldman_prompt(map_manager, p, parchment_open)
         else:
@@ -578,8 +603,7 @@ def run_solo():
                 if p.alive and mob.is_attack_hit_frame and mob.position.distance_to(p.position) <= mob.attack_radius:
                     p.take_damage(mob.damage)
                     break
-            can_damage = map_manager.current_map != "spawn" or objectives.step >= 2
-            if can_damage and p.weapon.hitbox:
+            if p.weapon.hitbox:
                 for mob in map_manager.mobs:
                     if mob.alive and p.weapon.hitbox.colliderect(mob.hitbox):
                         mob.take_damage(p.damage, interface)
