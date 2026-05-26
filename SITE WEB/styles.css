@@ -1,0 +1,409 @@
+:root {
+  --paper: #fff6e6;
+  --paper-deep: #f4ead7;
+  --ink: #2d1b13;
+  --muted: #675245;
+  --red: #d93b20;
+  --gold: #f7aa2f;
+  --night: #21161b;
+  --white: #ffffff;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.site-header {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  min-height: 5.4rem;
+  align-items: center;
+  justify-content: space-between;
+  gap: 2rem;
+  padding: 0.85rem clamp(1rem, 4vw, 3.25rem);
+  background: var(--white);
+  box-shadow: 0 1px 0 rgba(45, 27, 19, 0.08);
+}
+
+.logo img {
+  display: block;
+  width: clamp(4.6rem, 8vw, 6.4rem);
+  height: auto;
+}
+
+.menu-button {
+  display: grid;
+  width: 3rem;
+  height: 3rem;
+  place-items: center;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+.menu-button span {
+  display: block;
+  width: 1.7rem;
+  height: 0.16rem;
+  background: var(--ink);
+}
+
+.menu {
+  position: absolute;
+  top: calc(100% - 1rem);
+  right: clamp(1.25rem, 5vw, 4rem);
+  display: none;
+  min-width: 17rem;
+  padding: 0.9rem;
+  border: 1px solid rgba(45, 27, 19, 0.12);
+  border-radius: 0.4rem;
+  background: var(--white);
+  box-shadow: 0 1.2rem 2.4rem rgba(45, 27, 19, 0.16);
+}
+
+.menu.is-open {
+  display: grid;
+}
+
+.menu a {
+  padding: 0.75rem 0.85rem;
+  border-radius: 0.25rem;
+  color: var(--muted);
+  font-weight: 800;
+}
+
+.menu a:hover {
+  background: var(--paper);
+  color: var(--red);
+}
+
+.intro {
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(17rem, 0.75fr);
+  gap: clamp(2rem, 7vw, 7rem);
+  padding: clamp(2.6rem, 5.5vw, 4.8rem) clamp(1rem, 4vw, 3.25rem) clamp(2rem, 4vw, 3.2rem);
+}
+
+h1,
+h2,
+h3,
+p {
+  margin-top: 0;
+}
+
+h1 {
+  max-width: 48rem;
+  margin-bottom: 0;
+  font-size: clamp(2.35rem, 4.7vw, 4.15rem);
+  line-height: 1.12;
+  letter-spacing: 0;
+}
+
+h1 span,
+.kicker,
+.download-button span {
+  color: var(--red);
+}
+
+h2 {
+  margin-bottom: 1rem;
+  font-size: clamp(1.2rem, 2vw, 1.75rem);
+  line-height: 1.12;
+  letter-spacing: 0;
+}
+
+p,
+li {
+  color: var(--muted);
+  font-size: 0.98rem;
+  line-height: 1.58;
+}
+
+.hero-image {
+  margin: 0 clamp(1rem, 4vw, 3.25rem);
+  overflow: hidden;
+  border-radius: 0.2rem;
+}
+
+.hero-image img {
+  display: block;
+  width: 100%;
+  max-height: 27rem;
+  object-fit: cover;
+}
+
+.story,
+.download,
+.install {
+  padding: clamp(2.8rem, 5vw, 4.4rem) clamp(1rem, 4vw, 3.25rem);
+}
+
+.story {
+  max-width: 68rem;
+}
+
+.kicker {
+  margin-bottom: 0.95rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.preview {
+  display: grid;
+  grid-template-columns: minmax(16rem, 0.9fr) minmax(0, 1.1fr);
+  gap: clamp(1.5rem, 5vw, 5rem);
+  align-items: center;
+  padding: 0 clamp(1rem, 4vw, 3.25rem) clamp(2.8rem, 5vw, 4.4rem);
+}
+
+.preview img {
+  display: block;
+  width: 100%;
+  border: 0.25rem solid var(--ink);
+  border-radius: 0.25rem;
+  image-rendering: pixelated;
+}
+
+.mechanic-visuals {
+  display: grid;
+  gap: 1rem;
+}
+
+.mechanic-visuals img:first-child {
+  border-color: transparent;
+  background: var(--white);
+  image-rendering: auto;
+  object-fit: contain;
+}
+
+.download {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 2rem;
+  align-items: center;
+  background: var(--paper-deep);
+}
+
+.download-actions {
+  display: grid;
+  gap: 1rem;
+  justify-items: start;
+}
+
+.download-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.7rem;
+  padding: 0.9rem 1.15rem;
+  border: 0.25rem solid var(--ink);
+  border-radius: 0.35rem;
+  background: var(--white);
+  color: var(--ink);
+  font-size: 1rem;
+  font-weight: 900;
+  box-shadow: 0.45rem 0.45rem 0 var(--ink);
+}
+
+.download-button:hover {
+  transform: translate(0.1rem, 0.1rem);
+  box-shadow: 0.35rem 0.35rem 0 var(--ink);
+}
+
+.source-link {
+  color: var(--red);
+  font-weight: 850;
+}
+
+.text-link {
+  display: inline-block;
+  margin-top: 0.45rem;
+  color: var(--red);
+  font-weight: 900;
+}
+
+.install {
+  max-width: 58rem;
+}
+
+.install ol {
+  margin: 0;
+  padding-left: 1.35rem;
+}
+
+.install li + li {
+  margin-top: 0.55rem;
+}
+
+footer {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+  padding: 2rem clamp(1rem, 4vw, 3.25rem);
+  background: var(--night);
+  color: var(--white);
+}
+
+footer strong {
+  display: block;
+  margin-bottom: 0.4rem;
+}
+
+footer p {
+  margin-bottom: 0;
+  color: #dccfc1;
+}
+
+.page-hero {
+  padding: clamp(2.8rem, 5.5vw, 5rem) clamp(1rem, 4vw, 3.25rem);
+}
+
+.page-hero h1 {
+  max-width: 60rem;
+  margin-bottom: 1.2rem;
+}
+
+.page-hero p {
+  max-width: 46rem;
+}
+
+.split {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: clamp(2rem, 6vw, 6rem);
+  align-items: center;
+}
+
+.character {
+  width: clamp(7rem, 15vw, 12rem);
+  image-rendering: pixelated;
+}
+
+.wide {
+  max-width: 72rem;
+}
+
+.cards {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+  padding: 0 clamp(1rem, 4vw, 3.25rem) clamp(2.8rem, 5vw, 4.4rem);
+}
+
+.plain-section {
+  max-width: 58rem;
+  padding: 0 clamp(1rem, 4vw, 3.25rem) clamp(2.8rem, 5vw, 4.4rem);
+}
+
+.plain-section h2 {
+  margin-bottom: 1rem;
+}
+
+.cards article {
+  padding: 1.1rem;
+  border: 1px solid rgba(45, 27, 19, 0.14);
+  border-radius: 0.35rem;
+  background: rgba(255, 255, 255, 0.58);
+}
+
+.cards span {
+  color: var(--red);
+  font-weight: 900;
+}
+
+.cards h2 {
+  margin: 0.55rem 0 0.65rem;
+  font-size: 1.2rem;
+}
+
+.timeline {
+  align-items: stretch;
+}
+
+.compact {
+  grid-template-columns: 1fr;
+  padding: 0;
+}
+
+.team {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.page-preview {
+  padding-top: 0;
+}
+
+.photo-band {
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(16rem, 0.75fr);
+  gap: 1rem;
+  align-items: stretch;
+  padding: 0 clamp(1rem, 4vw, 3.25rem) clamp(2.8rem, 5vw, 4.4rem);
+}
+
+.photo-band img {
+  width: 100%;
+  height: 100%;
+  min-height: 16rem;
+  object-fit: cover;
+  border-radius: 0.25rem;
+}
+
+.photo-band img:last-child {
+  background: var(--white);
+  object-fit: contain;
+  padding: 2rem;
+}
+
+@media (max-width: 850px) {
+  .site-header {
+    min-height: 5rem;
+  }
+
+  .intro,
+  .preview,
+  .download,
+  .split,
+  .cards,
+  .team,
+  .photo-band,
+  footer {
+    grid-template-columns: 1fr;
+  }
+
+  h1 {
+    font-size: clamp(2.15rem, 9vw, 3.25rem);
+  }
+
+  .download-button {
+    width: 100%;
+  }
+}
+
+@media (max-width: 520px) {
+  .site-header {
+    min-height: 4.6rem;
+  }
+
+  .hero-image img {
+    min-height: 16rem;
+  }
+}

@@ -24,12 +24,14 @@ class Weapon(animation.AnimateSprite):
         )
 
         self.angle = 0
+        self.attack_id = 0
 
     def move(self, x, y):
         self.position = pygame.math.Vector2(x, y)
 
     def hit(self):
         if not self.animation:  # on ne relance que si l'animation est terminée
+            self.attack_id += 1
             self.start_animation()
             # Jouer le son du slash
             if self.interface and 'slash' in self.interface.sounds:
@@ -50,10 +52,8 @@ class Weapon(animation.AnimateSprite):
         dx = mouse_x - player_screen_x
         dy = mouse_y - player_screen_y
 
-        new_direction = 'right' if dx >= 0 else 'left'
-        self.direction = new_direction
-
         if not self.animation:
+            self.direction = 'right' if dx >= 0 else 'left'
             self.angle = math.degrees(math.atan2(-dy, dx))
 
             if self.direction == 'right':
@@ -72,23 +72,24 @@ class Weapon(animation.AnimateSprite):
             )
         )
 
-        return new_direction
+        return self.direction
 
     def apply_remote(self, x, y, angle, direction, animating):
         """Met à jour l'arme d'un joueur distant (sans souris ni map_manager)."""
         self.position = pygame.math.Vector2(x, y)
-        self.direction = direction
-        self.angle = angle
-
-        if direction == 'right':
-            base_image = self.original_image_right
-        else:
-            base_image = self.original_image_left
 
         if animating and not self.animation:
+            self.direction = direction
+            self.angle = angle
             self.start_animation()
 
         if not self.animation:
+            self.direction = direction
+            self.angle = angle
+            if self.direction == 'right':
+                base_image = self.original_image_right
+            else:
+                base_image = self.original_image_left
             self.image = pygame.transform.rotate(base_image, self.angle - 90)
 
         self.animate_hit()

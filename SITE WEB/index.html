@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Chamouraï - Télécharger le jeu</title>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <a class="logo" href="#" aria-label="Accueil Chamouraï">
+        <img src="site-assets/duda-titre.png" alt="Chamouraï">
+      </a>
+      <button class="menu-button" type="button" aria-label="Ouvrir le menu" aria-expanded="false">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+      <nav class="menu" aria-label="Navigation principale">
+        <a href="index.html">Accueil</a>
+        <a href="histoire-du-jeu.html">Histoire du Jeu</a>
+        <a href="equipe-de-developpement.html">Équipe de Développement</a>
+      </nav>
+    </header>
+
+    <main>
+      <section class="intro">
+        <div>
+          <h1>Plongez dans l'univers vibrant de <span>Chamouraï</span></h1>
+        </div>
+        <aside>
+          <h2>Un monde pixelisé aux couleurs vives</h2>
+          <p>
+            Explorez le Chapon, un royaume inspiré du Japon féodal où chaque
+            pixel raconte une histoire. Incarnez un chat rejeté et partez à la
+            reconquête de votre honneur dans un décor riche et stylisé.
+          </p>
+        </aside>
+      </section>
+
+      <section class="hero-image" aria-label="Aperçu visuel de Chamouraï">
+        <img src="site-assets/duda-hero.png" alt="Chat samouraï contemplant un paysage pixel art au coucher du soleil">
+      </section>
+
+      <section class="story" id="histoire">
+        <p class="kicker">De l'ombre à la lumière</p>
+        <h2>L'histoire de la création de Chamouraï</h2>
+          <p>
+            Chamouraï est un jeu vidéo réalisé par un groupe de quatre amis dans
+            le cadre d'un projet scolaire. Découvrez son univers et l'équipe à
+            travers les pages dédiées du site.
+          </p>
+          <a class="text-link" href="histoire-du-jeu.html">Lire l'histoire du jeu</a>
+        </section>
+
+      <section class="download" id="telechargement">
+        <div>
+          <p class="kicker">Cliquez sur le bouton</p>
+          <h2>Télécharger le jeu</h2>
+          <p>
+            Le bouton télécharge une copie ZIP du vrai projet Chamouraï récupéré
+            depuis le dépôt indiqué par le site original.
+          </p>
+        </div>
+        <div class="download-actions">
+          <a class="download-button" href="downloads/chamourai-source.zip" download>
+            <span>★</span>
+            Télécharger Chamouraï
+          </a>
+        </div>
+      </section>
+
+      <section class="install" id="installation">
+        <h2>Installation</h2>
+        <ol>
+          <li>Installez Python sur votre ordinateur.</li>
+          <li>Décompressez le fichier `chamourai-source.zip`.</li>
+          <li>Dans le dossier du jeu, créez un environnement virtuel Python.</li>
+          <li>Installez les dépendances avec `pip install -r requirements.txt`.</li>
+          <li>Lancez `run.bat` sur Windows.</li>
+        </ol>
+      </section>
+    </main>
+
+    <footer>
+      <div>
+        <strong>Chamouraï</strong>
+        <p>Jeu vidéo pixel art inspiré du Japon féodal.</p>
+      </div>
+      <div>
+        <strong>Dépendances</strong>
+        <p>pygame, pyscroll, PyTMX</p>
+      </div>
+      <div>
+        <strong>Téléchargement</strong>
+        <p>Archive ZIP locale du projet.</p>
+      </div>
+    </footer>
+
+    <script src="menu.js"></script>
+  </body>
+</html>

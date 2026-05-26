@@ -153,6 +153,21 @@ animations = {
     'skeleton_attack': load_animation_images(
         'mobs/Skeleton/SkeletonAttack', [774, 37], [43,37], scale=2
     ),
+    'skeleton_boss_idle': load_animation_images(
+        'mobs/Skeleton/SkeletonIdleBoss', [264, 32], [24, 32], scale=4
+    ),
+    'skeleton_boss_walk': load_animation_images(
+        'mobs/Skeleton/SkeletonWalkBoss', [286, 33], [22, 33], scale=4
+    ),
+    'skeleton_boss_hit': load_animation_images(
+        'mobs/Skeleton/SkeletonHitBoss', [240, 32], [30, 32], scale=4
+    ),
+    'skeleton_boss_dead': load_animation_images(
+        'mobs/Skeleton/SkeletonDeadBoss', [495, 32], [33, 32], scale=4
+    ),
+    'skeleton_boss_attack': load_animation_images(
+        'mobs/Skeleton/SkeletonAttackBoss', [774, 37], [43,37], scale=4
+    ),
     'E': load_animation_images(
         'keyboard/Keyboard_E', [32, 15], [16, 15], scale=2
     ),
@@ -176,5 +191,53 @@ animations = {
     ),
     'necromancer_fireball': load_animation_images(
         'mobs/Necromancer/EnergyBall', [1152, 128], [128,128], scale=1
+    ),
+    'necromancer_boss_idle': load_animation_images(
+        'mobs/Necromancer/NecromancerIdleBoss', [1280,128], [160,128], scale=2
+    ),
+    'necromancer_boss_walk': load_animation_images(
+        'mobs/Necromancer/NecromancerWalkBoss', [1280,128], [160,128], scale=2
+    ),
+    'necromancer_boss_attack': load_animation_images(
+        'mobs/Necromancer/NecromancerAttackBoss', [2080, 128], [160,128], scale=2
+    ),
+    'necromancer_boss_hit': load_animation_images(
+        'mobs/Necromancer/NecromancerHitBoss', [800, 128], [160,128], scale=2
+    ),
+    'necromancer_boss_dead': load_animation_images(
+        'mobs/Necromancer/NecromancerDeathBoss', [1440, 128], [160,128], scale=2
+    ),
+    'necromancer_boss_fireball': load_animation_images(
+        'mobs/Necromancer/EnergyBallBoss', [1152, 128], [128,128], scale=2
+    ),
+    'golem_idle': load_animation_images(
+        'mobs/Golem/GolemIdle', [400, 100], [100, 100], scale=2
+    ),
+    'golem_walk': load_animation_images(
+        'mobs/Golem/GolemIdle', [400, 100], [100, 100], scale=2
+    ),
+    'golem_attack': load_animation_images(
+        'mobs/Golem/GolemAttack', [700, 100], [100, 100], scale=2
+    ),
+    'golem_hit': load_animation_images(
+        'mobs/Golem/GolemBlock', [800, 100], [100, 100], scale=2
+    ),
+    'golem_block': load_animation_images(
+        'mobs/Golem/GolemBlock', [800, 100], [100, 100], scale=2
+    ),
+    'golem_dead': load_animation_images(
+        'mobs/Golem/GolemDead', [1400, 100], [100, 100], scale=2
+    ),
+    'golem_glowing': load_animation_images(
+        'mobs/Golem/GolemGlowing', [800, 100], [100, 100], scale=2
+    ),
+    'golem_shockwave_attack': load_animation_images(
+        'mobs/Golem/GolemLaser', [700, 100], [100, 100], scale=2
+    ),
+    'golem_arm_shoot': load_animation_images(
+        'mobs/Golem/GolemArmShoot', [900, 100], [100, 100], scale=2
+    ),
+    'golem_arm': load_animation_images(
+        'mobs/Golem/Arm', [100, 100], [100, 100], scale=1
     )
 }
