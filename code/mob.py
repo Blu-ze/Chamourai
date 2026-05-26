@@ -7,6 +7,7 @@ DETECTION_RADIUS = 400
 ATTACK_RADIUS = 40
 PATHFIND_INTERVAL = 500
 WAYPOINT_THRESHOLD = 16
+FINAL_APPROACH_RADIUS = 56
 MAX_HP = 150
 HIT_FLASH_DURATION = 200
 ATTACK_HIT_FRAME = 7
@@ -413,12 +414,13 @@ class Mob(animation.AnimateSprite):
         self.state = "attack"
 
     def _chase(self, player_position, collisions, now_ms, other_mobs=None):
+        destination = pygame.math.Vector2(player_position)
         if now_ms - self._last_pathfind_ms > PATHFIND_INTERVAL or not self.path:
             self._last_pathfind_ms = now_ms
             try:
                 new_path = astar(
                     (self.position.x, self.position.y),
-                    (player_position.x, player_position.y),
+                    (destination.x, destination.y),
                     self.blocked_cells,
                 )
                 self.path = new_path if new_path else []
@@ -426,6 +428,8 @@ class Mob(animation.AnimateSprite):
                 self.path = []
 
         if not self.path:
+            if self.position.distance_to(destination) <= FINAL_APPROACH_RADIUS:
+                self._move_directly(destination - self.position, collisions, other_mobs)
             return
 
         target = pygame.math.Vector2(self.path[0])
@@ -434,6 +438,7 @@ class Mob(animation.AnimateSprite):
         if direction_vec.length() < WAYPOINT_THRESHOLD:
             self.path.pop(0)
             if not self.path:
+                self._move_directly(destination - self.position, collisions, other_mobs)
                 return
             target = pygame.math.Vector2(self.path[0])
             direction_vec = target - self.position

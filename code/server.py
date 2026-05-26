@@ -8,7 +8,7 @@ import threading
 import random
 import struct
 from mob import Mob
-from player import PLAYER_DAMAGE, INVINCIBLE_MODE_DAMAGE, MAX_HP
+from player import PLAYER_DAMAGE, MAX_HP
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -166,7 +166,7 @@ def enter_level(salon, restart=False):
             salon["states"][index]["restart_vote"] = False
             salon["states"][index]["grid_open"] = False
             salon["states"][index]["collected_keys"] = []
-            salon["states"][index]["objective_step"] = 4
+            salon["states"][index]["objective_step"] = 5
 
 
 def open_grid(salon):
@@ -387,30 +387,25 @@ def threaded_client(conn):
                 # Détection de coup : le joueur envoie weapon_rect pendant son animation
                 attack_id = data.get("weapon_attack_id", -1)
                 new_attack = attack_id != salon["last_attack_ids"][player_index]
-                forest_combat_ready = (
-                    salon["current_map"] != "spawn"
-                    or all(state.get("objective_step", 0) >= 2 for state in salon["states"])
-                )
                 if data.get("alive", True) and data.get("hit") and new_attack and skeletons:
                     salon["last_attack_ids"][player_index] = attack_id
-                    if forest_combat_ready:
-                        player_damage = INVINCIBLE_MODE_DAMAGE if data.get("invincible_mode") else PLAYER_DAMAGE
-                        weapon_rect = data.get("weapon_rect")
-                        if weapon_rect:
-                            wr = pygame.Rect(weapon_rect)
-                            for index, skeleton in enumerate(skeletons):
-                                if not skeleton.alive:
-                                    continue
-                                if wr.colliderect(skeleton.hitbox):
-                                    skeleton.take_damage(player_damage)
-                                    mobs[index] = mob_to_dict(skeleton)
-                                    salon["mobs"] = mobs
-                                    salon["mob"] = mobs[0] if mobs else None
-                        if salon["current_map"] == "spawn":
-                            salon["forest_skeleton_kills"] = sum(
-                                mob.mob_type == "skeleton" and mob.dead
-                                for mob in skeletons
-                            )
+                    player_damage = PLAYER_DAMAGE
+                    weapon_rect = data.get("weapon_rect")
+                    if weapon_rect:
+                        wr = pygame.Rect(weapon_rect)
+                        for index, skeleton in enumerate(skeletons):
+                            if not skeleton.alive:
+                                continue
+                            if wr.colliderect(skeleton.hitbox):
+                                skeleton.take_damage(player_damage)
+                                mobs[index] = mob_to_dict(skeleton)
+                                salon["mobs"] = mobs
+                                salon["mob"] = mobs[0] if mobs else None
+                    if salon["current_map"] == "spawn":
+                        salon["forest_skeleton_kills"] = sum(
+                            mob.mob_type == "skeleton" and mob.dead
+                            for mob in skeletons
+                        )
                 defeat = all(not state.get("alive", True) for state in salon["states"])
                 if defeat and data.get("restart_vote"):
                     salon["restart_votes"].add(player_index)
