@@ -235,16 +235,6 @@ def draw_objective_panel(surface, objectives):
     surface.blit(text, (rect.left + 14, rect.top + 35))
 
 
-def draw_invincible_indicator(surface, player):
-    if not player.invincible_mode:
-        return
-    text = pygame.font.Font(None, 30).render("Invincible", True, (255, 236, 121))
-    rect = text.get_rect(topleft=(20, 104)).inflate(18, 12)
-    pygame.draw.rect(surface, (24, 24, 20), rect, border_radius=5)
-    pygame.draw.rect(surface, (219, 173, 48), rect, width=2, border_radius=5)
-    surface.blit(text, text.get_rect(center=rect.center))
-
-
 def draw_teleport_waiting_message(surface, map_manager, players, dungeon_unlocked):
     if map_manager.current_map != "spawn" or not dungeon_unlocked:
         return
@@ -362,9 +352,6 @@ def run_game(network, spawn_data, player_index=0):
                     interface.set_walk_surface("grass")
                     return
                 continue
-            if event.type == pygame.KEYDOWN and event.key == pygame.K_a and event.mod & pygame.KMOD_CTRL:
-                p.toggle_invincible_mode()
-                continue
             if victory:
                 if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1 and victory_button_rect(win).collidepoint(event.pos):
                     interface.set_walk_surface("grass")
@@ -412,7 +399,7 @@ def run_game(network, spawn_data, player_index=0):
             "weapon_attack_id": p.weapon.attack_id, "weapon_rect": weapon_rect,
             "weapon_angle": p.weapon.angle, "weapon_dir": p.weapon.direction, "skin": my_skin,
             "grid_open": map_manager.grid_open, "current_map": map_manager.current_map,
-            "collected_keys": list(p.collected_keys), "invincible_mode": p.invincible_mode,
+            "collected_keys": list(p.collected_keys),
             "objective_step": objectives.step, "tutorial_ready": objectives.can_enter_dungeon(),
             "alive": p.alive, "hp": p.hp, "restart_vote": restart_vote, "restart_id": restart_id,
         })
@@ -495,7 +482,6 @@ def run_game(network, spawn_data, player_index=0):
             map_manager.draw_level_map(win, p)
         draw_key_inventory(win, map_manager, p)
         draw_objective_panel(win, objectives)
-        draw_invincible_indicator(win, p)
         if not p.alive and not defeat:
             draw_spectator_controls(win)
         if parchment_open:
@@ -545,9 +531,6 @@ def run_solo():
                 if interface.run_pause_menu(win) == "menu":
                     interface.set_walk_surface("grass")
                     return
-                continue
-            if event.type == pygame.KEYDOWN and event.key == pygame.K_a and event.mod & pygame.KMOD_CTRL:
-                p.toggle_invincible_mode()
                 continue
             if victory:
                 if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1 and victory_button_rect(win).collidepoint(event.pos):
@@ -617,7 +600,6 @@ def run_solo():
             map_manager.draw_level_map(win, p)
         draw_key_inventory(win, map_manager, p)
         draw_objective_panel(win, objectives)
-        draw_invincible_indicator(win, p)
         if not p.alive:
             draw_solo_defeat(win)
         if parchment_open:
