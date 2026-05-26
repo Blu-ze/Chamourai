@@ -8,7 +8,7 @@ import threading
 import random
 import struct
 from mob import Mob
-from player import PLAYER_DAMAGE, INVINCIBLE_MODE_DAMAGE
+from player import PLAYER_DAMAGE, INVINCIBLE_MODE_DAMAGE, MAX_HP
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -113,6 +113,7 @@ def mob_to_dict(mob):
         "state": mob.state,
         "alive": mob.alive,
         "hp":    mob.hp,
+        "max_hp": mob.max_hp,
         "type":  mob.mob_type,
         "attack_kind": mob.attack_kind,
         "attack_target": (mob._attack_target.x, mob._attack_target.y),
@@ -129,6 +130,8 @@ def create_mobs(map_name):
     mobs = []
     for mob_type, spawn in config["mob_spawns"]:
         mob = Mob(mob_type, spawn.x, spawn.y, 100)
+        mob.max_hp *= 2
+        mob.hp = mob.max_hp
         mob.init_pathfinding(config["collisions"])
         mobs.append(mob)
     return mobs
@@ -139,17 +142,31 @@ def player_is_on_spawn_teleport(state):
     return any(rect.collidepoint(feet_position) for rect in MAP_CONFIGS["spawn"]["teleports"])
 
 
-def enter_level(salon):
+def enter_level(salon, restart=False):
     config = MAP_CONFIGS["level"]
     salon["current_map"] = "level"
     salon["collisions"] = config["collisions"]
     salon["grid_open"] = False
+    if restart:
+        salon["collected_keys"].clear()
+        salon["last_attack_ids"] = [
+            state.get("weapon_attack_id", -1) for state in salon["states"]
+        ]
     salon["skeletons"] = create_mobs("level")
     salon["mobs"] = [mob_to_dict(mob) for mob in salon["skeletons"]]
     salon["mob"] = salon["mobs"][0] if salon["mobs"] else None
     for index, spawn in enumerate((config["spawn1"], config["spawn2"])):
         salon["states"][index]["x"] = spawn.x
         salon["states"][index]["y"] = spawn.y
+        salon["states"][index]["current_map"] = "level"
+        if restart:
+            salon["states"][index]["alive"] = True
+            salon["states"][index]["hp"] = MAX_HP
+            salon["states"][index]["state"] = "idle"
+            salon["states"][index]["restart_vote"] = False
+            salon["states"][index]["grid_open"] = False
+            salon["states"][index]["collected_keys"] = []
+            salon["states"][index]["objective_step"] = 4
 
 
 def open_grid(salon):
@@ -214,9 +231,12 @@ def mob_loop(code):
 
         now_ms = pygame.time.get_ticks()
         positions = [
-            pygame.math.Vector2(states[0]["x"], states[0]["y"]),
-            pygame.math.Vector2(states[1]["x"], states[1]["y"])
+            pygame.math.Vector2(state["x"], state["y"])
+            for state in states
+            if state.get("alive", True)
         ]
+        if not positions:
+            continue
         for skeleton in skeletons:
             if skeleton.mob_type == "golem" and not grid_open:
                 skeleton.update()
@@ -248,8 +268,8 @@ def threaded_client(conn):
                 salons[code] = {
                     "players":   [conn, None],
                     "states":    [
-                        {"x": spawn1.x, "y": spawn1.y, "dir": "right", "state": "idle",  "skin": "player"},
-                        {"x": spawn2.x, "y": spawn2.y, "dir": "right", "state": "idle",  "skin": "player2"}
+                        {"x": spawn1.x, "y": spawn1.y, "dir": "right", "state": "idle", "skin": "player", "alive": True, "hp": MAX_HP},
+                        {"x": spawn2.x, "y": spawn2.y, "dir": "right", "state": "idle", "skin": "player2", "alive": True, "hp": MAX_HP}
                     ],
                     "started":   False,
                     "current_map": "spawn",
@@ -261,6 +281,8 @@ def threaded_client(conn):
                     "last_attack_ids": [-1, -1],
                     "collected_keys": set(),
                     "forest_skeleton_kills": 0,
+                    "restart_votes": set(),
+                    "restart_id": 0,
                     "host_conn": conn
                 }
             send_packet(conn, {"status": "ok", "code": code, "player": 0})
@@ -343,6 +365,8 @@ def threaded_client(conn):
                 if code not in salons:
                     break
                 salon = salons[code]
+                if data.get("restart_id", 0) != salon["restart_id"]:
+                    data = salon["states"][player_index]
                 if salon["current_map"] == "level" and data.get("current_map") == "spawn":
                     previous = salon["states"][player_index]
                     data = dict(data, x=previous["x"], y=previous["y"])
@@ -367,7 +391,7 @@ def threaded_client(conn):
                     salon["current_map"] != "spawn"
                     or all(state.get("objective_step", 0) >= 2 for state in salon["states"])
                 )
-                if data.get("hit") and new_attack and skeletons:
+                if data.get("alive", True) and data.get("hit") and new_attack and skeletons:
                     salon["last_attack_ids"][player_index] = attack_id
                     if forest_combat_ready:
                         player_damage = INVINCIBLE_MODE_DAMAGE if data.get("invincible_mode") else PLAYER_DAMAGE
@@ -387,10 +411,22 @@ def threaded_client(conn):
                                 mob.mob_type == "skeleton" and mob.dead
                                 for mob in skeletons
                             )
+                defeat = all(not state.get("alive", True) for state in salon["states"])
+                if defeat and data.get("restart_vote"):
+                    salon["restart_votes"].add(player_index)
+                if defeat and len(salon["restart_votes"]) == 2:
+                    salon["restart_id"] += 1
+                    salon["restart_votes"].clear()
+                    enter_level(salon, restart=True)
+                    defeat = False
+                    other = salon["states"][1 - player_index]
+                    mobs = salon["mobs"]
                 current_map = salon["current_map"]
                 grid_open = salon["grid_open"]
                 collected_keys = list(salon["collected_keys"])
                 forest_skeleton_kills = salon["forest_skeleton_kills"]
+                restart_votes = len(salon["restart_votes"])
+                restart_id = salon["restart_id"]
 
             reply = {
                 "player": other,
@@ -400,6 +436,9 @@ def threaded_client(conn):
                 "grid_open": grid_open,
                 "collected_keys": collected_keys,
                 "forest_skeleton_kills": forest_skeleton_kills,
+                "defeat": defeat,
+                "restart_votes": restart_votes,
+                "restart_id": restart_id,
             }
             send_packet(conn, reply)
 
