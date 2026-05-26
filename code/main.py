@@ -140,6 +140,7 @@ def run_game(network, spawn_data, player_index=0):
             if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
                 action = interface.run_pause_menu(win)
                 if action == "menu":
+                    interface.set_walk_surface('grass')
                     return
             if event.type == pygame.KEYDOWN and event.key == pygame.K_e:
                 if parchment_open or is_near_oldman(map_manager, p):
@@ -160,6 +161,7 @@ def run_game(network, spawn_data, player_index=0):
             )
             if teleported:
                 interface.play_music('cave', fadeout_ms=800, fadein_ms=1200)
+                interface.set_walk_surface('cave')
 
         # Détection proximité oldman
         update_oldman_prompt(map_manager, p, parchment_open)
@@ -255,6 +257,7 @@ while True:
                 if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
                     action = interface.run_pause_menu(win)
                     if action == "menu":
+                        interface.set_walk_surface('grass')
                         break
                 if event.type == pygame.KEYDOWN and event.key == pygame.K_e:
                     if parchment_open or is_near_oldman(map_manager, p):
@@ -274,6 +277,7 @@ while True:
                     )
                     if teleported:
                         interface.play_music('cave', fadeout_ms=800, fadein_ms=1200)
+                        interface.set_walk_surface('cave')
 
                 # Détection proximité oldman
                 update_oldman_prompt(map_manager, p, parchment_open)

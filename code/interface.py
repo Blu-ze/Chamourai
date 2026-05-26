@@ -199,7 +199,9 @@ class Interface:
         self.sounds = {}
         try:
             self.sounds['slash'] = pygame.mixer.Sound(asset_path('assets/sounds/slash.ogg'))
-            self.sounds['walk'] = pygame.mixer.Sound(asset_path('assets/sounds/walk.wav'))
+            self.sounds['walk_grass'] = pygame.mixer.Sound(asset_path('assets/sounds/walk.wav'))
+            self.sounds['walk2'] = pygame.mixer.Sound(asset_path('assets/sounds/walk2.wav'))
+            self.sounds['walk'] = self.sounds['walk_grass']  # son actif par défaut
             self.sounds['dash'] = pygame.mixer.Sound(asset_path('assets/sounds/dash.wav'))
             self.sounds['kill'] = pygame.mixer.Sound(asset_path('assets/sounds/kill.wav'))
 
@@ -207,7 +209,8 @@ class Interface:
             for sound in self.sounds.values():
                 sound.set_volume(self.sfx_volume)
             self.sounds['dash'].set_volume(1.0)
-            self.sounds['walk'].set_volume(0.2)
+            self.sounds['walk_grass'].set_volume(0.2)
+            self.sounds['walk2'].set_volume(0.5)
             self.sounds['kill'].set_volume(0.2)
             self.sounds['slash'].set_volume(0.2)
         except Exception as e:
@@ -243,6 +246,14 @@ class Interface:
                 pygame.mixer.music.play(-1)
         except Exception as e:
             print(f"[Musique] Impossible de jouer '{track_name}' : {e}")
+
+    def set_walk_surface(self, surface_name):
+        """Change le son de pas actif. surface_name = 'grass' ou 'cave'."""
+        if surface_name == 'cave' and 'walk2' in self.sounds:
+            self.sounds['walk'] = self.sounds['walk2']
+        elif surface_name == 'grass' and 'walk_grass' in self.sounds:
+            self.sounds['walk'] = self.sounds['walk_grass']
+
     def _draw_bg(self):
         if self.background:
             self.screen.blit(self.background, (0, 0))
@@ -263,6 +274,7 @@ class Interface:
     def run_main_menu(self):
         clock = pygame.time.Clock()
         W, H  = self.screen_size
+        self.play_music('ambiance', fadeout_ms=600, fadein_ms=800)
         while True:
             clicked = False
             for event in pygame.event.get():
