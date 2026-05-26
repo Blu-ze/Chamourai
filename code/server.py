@@ -8,7 +8,7 @@ import threading
 import random
 import struct
 from mob import Mob
-from player import PLAYER_DAMAGE, GOD_MODE_DAMAGE
+from player import PLAYER_DAMAGE, INVINCIBLE_MODE_DAMAGE
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -260,6 +260,7 @@ def threaded_client(conn):
                     "skeletons": [],
                     "last_attack_ids": [-1, -1],
                     "collected_keys": set(),
+                    "forest_skeleton_kills": 0,
                     "host_conn": conn
                 }
             send_packet(conn, {"status": "ok", "code": code, "player": 0})
@@ -348,6 +349,7 @@ def threaded_client(conn):
                 salon["states"][player_index] = data
                 if (
                     salon["current_map"] == "spawn"
+                    and all(state.get("tutorial_ready", False) for state in salon["states"])
                     and all(player_is_on_spawn_teleport(state) for state in salon["states"])
                 ):
                     enter_level(salon)
@@ -361,23 +363,34 @@ def threaded_client(conn):
                 # Détection de coup : le joueur envoie weapon_rect pendant son animation
                 attack_id = data.get("weapon_attack_id", -1)
                 new_attack = attack_id != salon["last_attack_ids"][player_index]
+                forest_combat_ready = (
+                    salon["current_map"] != "spawn"
+                    or all(state.get("objective_step", 0) >= 2 for state in salon["states"])
+                )
                 if data.get("hit") and new_attack and skeletons:
                     salon["last_attack_ids"][player_index] = attack_id
-                    player_damage = GOD_MODE_DAMAGE if data.get("god_mode") else PLAYER_DAMAGE
-                    weapon_rect = data.get("weapon_rect")
-                    if weapon_rect:
-                        wr = pygame.Rect(weapon_rect)
-                        for index, skeleton in enumerate(skeletons):
-                            if not skeleton.alive:
-                                continue
-                            if wr.colliderect(skeleton.hitbox):
-                                skeleton.take_damage(player_damage)
-                                mobs[index] = mob_to_dict(skeleton)
-                                salon["mobs"] = mobs
-                                salon["mob"] = mobs[0] if mobs else None
+                    if forest_combat_ready:
+                        player_damage = INVINCIBLE_MODE_DAMAGE if data.get("invincible_mode") else PLAYER_DAMAGE
+                        weapon_rect = data.get("weapon_rect")
+                        if weapon_rect:
+                            wr = pygame.Rect(weapon_rect)
+                            for index, skeleton in enumerate(skeletons):
+                                if not skeleton.alive:
+                                    continue
+                                if wr.colliderect(skeleton.hitbox):
+                                    skeleton.take_damage(player_damage)
+                                    mobs[index] = mob_to_dict(skeleton)
+                                    salon["mobs"] = mobs
+                                    salon["mob"] = mobs[0] if mobs else None
+                        if salon["current_map"] == "spawn":
+                            salon["forest_skeleton_kills"] = sum(
+                                mob.mob_type == "skeleton" and mob.dead
+                                for mob in skeletons
+                            )
                 current_map = salon["current_map"]
                 grid_open = salon["grid_open"]
                 collected_keys = list(salon["collected_keys"])
+                forest_skeleton_kills = salon["forest_skeleton_kills"]
 
             reply = {
                 "player": other,
@@ -386,6 +399,7 @@ def threaded_client(conn):
                 "current_map": current_map,
                 "grid_open": grid_open,
                 "collected_keys": collected_keys,
+                "forest_skeleton_kills": forest_skeleton_kills,
             }
             send_packet(conn, reply)
 

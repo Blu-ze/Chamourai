@@ -5,8 +5,8 @@ from weapon import Weapon
 MAX_HP         = 100
 PLAYER_DAMAGE  = 2
 PLAYER_SPEED   = 4
-GOD_MODE_DAMAGE = 10
-GOD_MODE_SPEED  = 10
+INVINCIBLE_MODE_DAMAGE = 10
+INVINCIBLE_MODE_SPEED = 10
 DODGE_SPEED    = 8    # vitesse de déplacement pendant l'esquive
 DODGE_COOLDOWN = 1000  # ms avant de pouvoir esquiver à nouveau
 DODGE_ANIMATION_SPEED = 60  # ms entre chaque frame de l'esquive
@@ -18,7 +18,7 @@ class Player(animation.AnimateSprite):
         self.old_position = self.position.copy()
         self.speed = PLAYER_SPEED
         self.damage = PLAYER_DAMAGE
-        self.god_mode = False
+        self.invincible_mode = False
         self.state = "idle"
         self.feet = pygame.Rect(0, 0, self.rect.width * 0.5, 20)
         self.weapon = Weapon('katana', x, y, 35, interface)
@@ -53,13 +53,13 @@ class Player(animation.AnimateSprite):
             self.position.y + self.image.get_height() / 2
         )
 
-    def toggle_god_mode(self):
-        self.god_mode = not self.god_mode
-        self.damage = GOD_MODE_DAMAGE if self.god_mode else PLAYER_DAMAGE
-        self.speed = GOD_MODE_SPEED if self.god_mode else PLAYER_SPEED
+    def toggle_invincible_mode(self):
+        self.invincible_mode = not self.invincible_mode
+        self.damage = INVINCIBLE_MODE_DAMAGE if self.invincible_mode else PLAYER_DAMAGE
+        self.speed = INVINCIBLE_MODE_SPEED if self.invincible_mode else PLAYER_SPEED
 
     def take_damage(self, amount=1):
-        if not self.alive or self.invincible or self.god_mode:
+        if not self.alive or self.invincible or self.invincible_mode:
             return
         self.hp = max(0, self.hp - amount)
         if self.hp <= 0:
