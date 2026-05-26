@@ -1,5 +1,6 @@
 import socket
 import pickle
+import struct
 
 def get_local_ip():
     try:
@@ -19,10 +20,24 @@ class Network:
         self.client.connect((self.server, self.port))
 
     def send_raw(self, data):
-        self.client.sendall(pickle.dumps(data))
+        payload = pickle.dumps(data)
+        self.client.sendall(struct.pack("!I", len(payload)) + payload)
 
     def recv_raw(self):
-        return pickle.loads(self.client.recv(4096))
+        header = self._recv_exact(4)
+        size = struct.unpack("!I", header)[0]
+        return pickle.loads(self._recv_exact(size))
+
+    def _recv_exact(self, size):
+        chunks = []
+        remaining = size
+        while remaining:
+            chunk = self.client.recv(remaining)
+            if not chunk:
+                raise ConnectionError("Connexion interrompue pendant la reception.")
+            chunks.append(chunk)
+            remaining -= len(chunk)
+        return b"".join(chunks)
 
     def create_salon(self):
         self.send_raw("CREATE")
@@ -42,7 +57,7 @@ class Network:
 
     def send(self, data):
         try:
-            self.client.sendall(pickle.dumps(data))
-            return pickle.loads(self.client.recv(4096))
-        except socket.error as e:
+            self.send_raw(data)
+            return self.recv_raw()
+        except (socket.error, ConnectionError) as e:
             print(e)

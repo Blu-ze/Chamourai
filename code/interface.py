@@ -387,6 +387,7 @@ class Interface:
         W, H = self.screen_size
         box = InputBox(W // 2 - 100, H // 2, 200, 70)
         confirm = Button("Rejoindre", W // 2 - 150, H // 2 + 100, 300, 55, (70, 130, 240), (90, 150, 255))
+        back = Button("Retour", W // 2 - 150, H // 2 + 170, 300, 55, (95, 95, 105), (125, 125, 140))
         error = ""
         success = ""
 
@@ -406,13 +407,17 @@ class Interface:
             box.draw(self.screen)
             confirm.check_hover(mouse)
             confirm.draw(self.screen)
+            back.check_hover(mouse)
+            back.draw(self.screen)
 
             if error:
-                self._draw_text(error, self.font_small, (255, 80, 80), (W // 2, H // 2 + 180))
+                self._draw_text(error, self.font_small, (255, 80, 80), (W // 2, H // 2 + 250))
             if success:
-                self._draw_text(success, self.font_normal, (100, 255, 100), (W // 2, H // 2 + 180))
+                self._draw_text(success, self.font_normal, (100, 255, 100), (W // 2, H // 2 + 250))
                 return {"status": "ok"}
 
+            if back.is_clicked(mouse, clicked):
+                return {"status": "back"}
             if confirm.is_clicked(mouse, clicked):
                 if len(box.text) == 4:
                     result = network.join_salon(box.text)
@@ -471,6 +476,7 @@ class Interface:
         W, H = self.screen_size
         ip_text = ""
         confirm = Button("Confirmer", W // 2 - 150, H // 2 + 100, 300, 55, (70, 130, 240), (90, 150, 255))
+        back = Button("Retour", W // 2 - 150, H // 2 + 170, 300, 55, (95, 95, 105), (125, 125, 140))
         error = ""
 
         while True:
@@ -494,8 +500,12 @@ class Interface:
             self.screen.blit(ip_surf, ip_surf.get_rect(center=(W // 2, H // 2)))
             confirm.check_hover(mouse)
             confirm.draw(self.screen)
+            back.check_hover(mouse)
+            back.draw(self.screen)
             if error:
-                self._draw_text(error, self.font_small, (255, 80, 80), (W // 2, H // 2 + 180))
+                self._draw_text(error, self.font_small, (255, 80, 80), (W // 2, H // 2 + 250))
+            if back.is_clicked(mouse, clicked):
+                return None
             if confirm.is_clicked(mouse, clicked):
                 parts = ip_text.split('.')
                 if len(parts) == 4 and all(p.isdigit() and 0 <= int(p) <= 255 for p in parts):
@@ -857,6 +867,7 @@ class Interface:
         W, H = self.screen_size
         ip_text = ""
         confirm = Button("Confirmer", W // 2 - 150, H // 2 + 100, 300, 55, (70, 130, 240), (90, 150, 255))
+        back = Button("Retour", W // 2 - 150, H // 2 + 170, 300, 55, (95, 95, 105), (125, 125, 140))
         error = ""
 
         while True:
@@ -880,8 +891,12 @@ class Interface:
             self.screen.blit(ip_surf, ip_surf.get_rect(center=(W // 2, H // 2)))
             confirm.check_hover(mouse)
             confirm.draw(self.screen)
+            back.check_hover(mouse)
+            back.draw(self.screen)
             if error:
-                self._draw_text(error, self.font_small, (255, 80, 80), (W // 2, H // 2 + 180))
+                self._draw_text(error, self.font_small, (255, 80, 80), (W // 2, H // 2 + 250))
+            if back.is_clicked(mouse, clicked):
+                return None
             if confirm.is_clicked(mouse, clicked):
                 parts = ip_text.split('.')
                 if len(parts) == 4 and all(p.isdigit() and 0 <= int(p) <= 255 for p in parts):

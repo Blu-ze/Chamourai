@@ -2,7 +2,11 @@ import pygame
 import animation
 from weapon import Weapon
 
-MAX_HP         = 100
+MAX_HP         = 50
+PLAYER_DAMAGE  = 2
+PLAYER_SPEED   = 4
+INVINCIBLE_MODE_DAMAGE = 10
+INVINCIBLE_MODE_SPEED = 10
 DODGE_SPEED    = 8    # vitesse de déplacement pendant l'esquive
 DODGE_COOLDOWN = 1000  # ms avant de pouvoir esquiver à nouveau
 DODGE_ANIMATION_SPEED = 60  # ms entre chaque frame de l'esquive
@@ -12,7 +16,9 @@ class Player(animation.AnimateSprite):
         super().__init__(skin, animation_speed)
         self.position = pygame.math.Vector2(x, y)
         self.old_position = self.position.copy()
-        self.speed = 4
+        self.speed = PLAYER_SPEED
+        self.damage = PLAYER_DAMAGE
+        self.invincible_mode = False
         self.state = "idle"
         self.feet = pygame.Rect(0, 0, self.rect.width * 0.5, 20)
         self.weapon = Weapon('katana', x, y, 35, interface)
@@ -22,6 +28,8 @@ class Player(animation.AnimateSprite):
 
         self.hp    = MAX_HP
         self.alive = True
+        self.key_count = 0
+        self.collected_keys = set()
 
         # ── Esquive ───────────────────────────────────────────────────────────
         self.dodging        = False            # esquive en cours
@@ -45,8 +53,13 @@ class Player(animation.AnimateSprite):
             self.position.y + self.image.get_height() / 2
         )
 
+    def toggle_invincible_mode(self):
+        self.invincible_mode = not self.invincible_mode
+        self.damage = INVINCIBLE_MODE_DAMAGE if self.invincible_mode else PLAYER_DAMAGE
+        self.speed = INVINCIBLE_MODE_SPEED if self.invincible_mode else PLAYER_SPEED
+
     def take_damage(self, amount=1):
-        if not self.alive or self.invincible:
+        if not self.alive or self.invincible or self.invincible_mode:
             return
         self.hp = max(0, self.hp - amount)
         if self.hp <= 0:
@@ -91,6 +104,12 @@ class Player(animation.AnimateSprite):
             return
 
         keys   = pygame.key.get_pressed()
+
+        # Declenche l'esquive avant d'appliquer un deplacement classique.
+        if keys[pygame.K_SPACE] and now - self._dodge_used_ms >= DODGE_COOLDOWN:
+            self._start_dodge(now, map_manager)
+            return
+
         moving = False
         now = pygame.time.get_ticks()
 
@@ -143,11 +162,7 @@ class Player(animation.AnimateSprite):
             self.state = "idle"
             self.current_image = 0
 
-        # ── Déclenchement de l'esquive ────────────────────────────────────────
-        if keys[pygame.K_SPACE] and now - self._dodge_used_ms >= DODGE_COOLDOWN:
-            self._start_dodge(now, map_manager)
-            return
-
+        # Mise a jour de l'arme
         self.weapon.move(self.position.x, self.position.y)
         new_direction = self.weapon.rotate(self.position, map_manager)
         self.set_direction(new_direction)
