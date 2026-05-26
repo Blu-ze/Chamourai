@@ -206,6 +206,10 @@ class Interface:
             # Appliquer le volume SFX
             for sound in self.sounds.values():
                 sound.set_volume(self.sfx_volume)
+            self.sounds['dash'].set_volume(1.0)
+            self.sounds['walk'].set_volume(0.2)
+            self.sounds['kill'].set_volume(0.2)
+            self.sounds['slash'].set_volume(0.2)
         except Exception as e:
             print(f"[SFX] Erreur chargement sons: {e}")
 
