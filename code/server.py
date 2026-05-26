@@ -25,11 +25,12 @@ def get_optional_object(name):
     except (KeyError, ValueError):
         return None
 
-skeleton_spawns = [obj for obj in tmx_data.objects if obj.name == "Skeleton"]
-if not skeleton_spawns:
+mob_spawns = [("skeleton", obj) for obj in tmx_data.objects if obj.name == "Skeleton"]
+mob_spawns += [("necromancer", obj) for obj in tmx_data.objects if obj.name == "Necromancer"]
+if not mob_spawns:
     legacy_spawn = get_optional_object("MobSpawn")
     if legacy_spawn:
-        skeleton_spawns.append(legacy_spawn)
+        mob_spawns.append(("skeleton", legacy_spawn))
 
 collisions = []
 for obj in tmx_data.objects:
@@ -44,18 +45,20 @@ def mob_to_dict(mob):
         "state": mob.state,
         "alive": mob.alive,
         "hp":    mob.hp,
+        "type":  mob.mob_type,
     }
 
-def spawn_to_dict(spawn):
-    return {"x": spawn.x, "y": spawn.y, "dir": "right", "state": "idle"}
+def spawn_to_dict(spawn_data):
+    mob_type, spawn = spawn_data
+    return {"x": spawn.x, "y": spawn.y, "dir": "right", "state": "idle", "type": mob_type}
 
-def create_skeletons():
-    skeletons = []
-    for spawn in skeleton_spawns:
-        skeleton = Mob('skeleton', spawn.x, spawn.y, 100)
-        skeleton.init_pathfinding(collisions)
-        skeletons.append(skeleton)
-    return skeletons
+def create_mobs():
+    mobs = []
+    for mob_type, spawn in mob_spawns:
+        mob = Mob(mob_type, spawn.x, spawn.y, 100)
+        mob.init_pathfinding(collisions)
+        mobs.append(mob)
+    return mobs
 
 server = "0.0.0.0"
 port   = 5555
@@ -112,6 +115,12 @@ def mob_loop(code):
             nearest = min(positions, key=lambda p: skeleton.position.distance_to(p))
             skeleton.update_ai(nearest, collisions, now_ms, skeletons)
             skeleton.update()
+            for projectile in skeleton.projectiles:
+                projectile.update(collisions)
+            skeleton.projectiles = [
+                projectile for projectile in skeleton.projectiles
+                if projectile.active
+            ]
 
         with salons_lock:
             if code in salons:
@@ -132,8 +141,8 @@ def threaded_client(conn):
                         {"x": spawn2.x, "y": spawn2.y, "dir": "right", "state": "idle",  "skin": "player2"}
                     ],
                     "started":   False,
-                    "mobs":      [spawn_to_dict(spawn) for spawn in skeleton_spawns],
-                    "mob":       spawn_to_dict(skeleton_spawns[0]) if skeleton_spawns else None,
+                    "mobs":      [spawn_to_dict(spawn) for spawn in mob_spawns],
+                    "mob":       spawn_to_dict(mob_spawns[0]) if mob_spawns else None,
                     "skeletons": [],
                     "host_conn": conn
                 }
@@ -157,7 +166,7 @@ def threaded_client(conn):
                     if msg == "START":
                         with salons_lock:
                             salons[code]["started"] = True
-                            skeletons = create_skeletons()
+                            skeletons = create_mobs()
                             salons[code]["skeletons"] = skeletons
                             salons[code]["mobs"] = [mob_to_dict(skeleton) for skeleton in skeletons]
                             salons[code]["mob"] = salons[code]["mobs"][0] if salons[code]["mobs"] else None

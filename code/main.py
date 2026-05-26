@@ -103,6 +103,24 @@ def update_oldman_prompt(map_manager, player, parchment_open):
     else:
         map_manager.ekey.hide()
 
+def update_mob_projectiles(map_manager, player):
+    for mob in map_manager.mobs:
+        active_projectiles = []
+        for projectile in mob.projectiles:
+            if not projectile.active:
+                continue
+            if not projectile._added_to_group:
+                map_manager.add_sprite(projectile, layer=18)
+                projectile._added_to_group = True
+            projectile.update(map_manager.collisions)
+            if projectile.active and player.alive and projectile.hitbox.colliderect(player.rect):
+                player.take_damage(1)
+                projectile.kill()
+                continue
+            if projectile.active:
+                active_projectiles.append(projectile)
+        mob.projectiles = active_projectiles
+
 def run_game(network, spawn_data, player_index=0):
     map_manager = MapManager(screen_size)
     parchment = load_parchment_image()
@@ -198,6 +216,7 @@ def run_game(network, spawn_data, player_index=0):
                         mob.direction  = mob_data["dir"]
                         mob.state      = mob_data["state"]
                     mob.update()
+                update_mob_projectiles(map_manager, p)
         p2.update_animation()
         draw_health_bar(win, p.hp, MAX_HP)
 
@@ -251,6 +270,7 @@ while True:
                 for mob in map_manager.mobs:
                     mob.update_ai(p.position, map_manager.collisions, now, map_manager.mobs)
                     mob.update()
+                update_mob_projectiles(map_manager, p)
                 # Coup du mob sur le joueur (solo) : seulement sur la frame de coup
                 for mob in map_manager.mobs:
                     if p.alive and mob.is_attack_hit_frame:

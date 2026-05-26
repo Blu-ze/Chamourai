@@ -99,24 +99,26 @@ class MapManager:
 
         self.collisions = []
         self.teleports = []
-        skeleton_spawns = []
+        mob_spawns = []
         for obj in self.tmx_data.objects:
             if obj.type == "collision":
                 self.collisions.append(pygame.Rect(obj.x, obj.y, obj.width, obj.height))
             if obj.name == "teleport" or obj.type == "teleport":
                 self.teleports.append(pygame.Rect(obj.x, obj.y, obj.width, obj.height))
             if obj.name == "Skeleton":
-                skeleton_spawns.append(obj)
+                mob_spawns.append(("skeleton", obj))
+            if obj.name == "Necromancer":
+                mob_spawns.append(("necromancer", obj))
 
         # Mob affiché côté client (pas d'IA, juste le rendu)
-        if not skeleton_spawns:
+        if not mob_spawns:
             legacy_spawn = self.get_object("MobSpawn")
             if legacy_spawn:
-                skeleton_spawns.append(legacy_spawn)
+                mob_spawns.append(("skeleton", legacy_spawn))
 
         self.mobs = []
-        for spawn in skeleton_spawns:
-            mob = Mob('skeleton', spawn.x, spawn.y, 100)
+        for mob_type, spawn in mob_spawns:
+            mob = Mob(mob_type, spawn.x, spawn.y, 100)
             mob.init_pathfinding(self.collisions)
             self.mobs.append(mob)
             self.group.add(mob, layer=18)
