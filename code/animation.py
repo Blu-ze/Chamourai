@@ -138,6 +138,9 @@ animations = {
     'katana': load_animation_images(
         'katana/spritesheet', [1250, 160], [125, 80], scale=1
     ),
+    'katana_charge': load_animation_images(
+        'katana/spritesheetcharge', [1250, 160], [125, 80], scale=1
+    ),
     'skeleton_idle': load_animation_images(
         'mobs/Skeleton/SkeletonIdle', [264, 32], [24, 32], scale=2
     ),

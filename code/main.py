@@ -46,42 +46,46 @@ class ObjectiveTracker:
             self.step = 1
             self.progress = 0
 
-    def record_attack(self):
-        if self.step == 1:
+    def record_attack(self, charged=False):
+        if self.step == 1 and not charged:
             self.progress += 1
             self._advance_at(3)
+        elif self.step == 2 and charged:
+            self.step = 3
+            self.progress = 0
 
     def record_dodge(self):
-        if self.step == 2:
+        if self.step == 3:
             self.progress += 1
             self._advance_at(3)
 
     def update_forest_skeleton_kills(self, killed):
-        if self.step == 3:
+        if self.step == 4:
             self.progress = min(3, killed)
             self._advance_at(3)
 
     def can_enter_dungeon(self):
-        return self.step >= 4
+        return self.step >= 5
 
     def entered_dungeon(self):
-        if self.step == 4:
-            self.step = 5
-            self.progress = 0
-
-    def opened_map(self):
-        if self.step == 5:
+        if self.step <= 5:
             self.step = 6
             self.progress = 0
 
-    def update_keys(self, count):
+    def opened_map(self):
         if self.step == 6:
+            self.step = 7
+            self.progress = 0
+
+    def update_keys(self, count):
+        if self.step == 7:
             self.progress = min(2, count)
 
     def label_and_progress(self):
         objectives = (
             ("Parler au vieil homme", None),
             ("Frapper 3 fois", 3),
+            ("Faire un coup charge", None),
             ("Esquiver 3 fois", 3),
             ("Tuer 3 squelettes dans la foret", 3),
             ("Entrer dans le donjon", None),
@@ -102,6 +106,22 @@ def draw_health_bar(surface, hp, max_hp):
         pygame.draw.rect(surface, color, (x, y, int(width * ratio), height), border_radius=6)
     text = pygame.font.Font(None, 26).render(f"PV  {hp} / {max_hp}", True, (255, 255, 255))
     surface.blit(text, (x + 6, y + 3))
+
+
+def draw_charge_bar(surface, weapon):
+    if not weapon.charging:
+        return
+    width, height = 250, 16
+    x = (surface.get_width() - width) // 2
+    y = surface.get_height() - 46
+    ratio = weapon.charge_ratio()
+    pygame.draw.rect(surface, (22, 22, 24), (x - 3, y - 3, width + 6, height + 6), border_radius=6)
+    pygame.draw.rect(surface, (76, 71, 62), (x, y, width, height), border_radius=4)
+    if ratio:
+        color = (230, 177, 51) if ratio < 1 else (73, 191, 237)
+        pygame.draw.rect(surface, color, (x, y, int(width * ratio), height), border_radius=4)
+    label = pygame.font.Font(None, 25).render("COUP CHARGE", True, (248, 244, 230))
+    surface.blit(label, label.get_rect(midbottom=(x + width // 2, y - 7)))
 
 
 def draw_button(surface, rect, text, colors=((92, 42, 39), (126, 54, 47))):
@@ -204,7 +224,7 @@ def draw_grid_message(surface, map_manager, player):
         return
     message = (
         "Appuyez sur E pour ouvrir la grille"
-        if player.key_count >= 2
+        if player.key_count >= 2 or player.invincible_mode
         else f"Il faut 2 cles pour ouvrir la grille ({player.key_count}/2)"
     )
     text = pygame.font.Font(None, 34).render(message, True, (255, 255, 255))
@@ -236,6 +256,16 @@ def draw_objective_panel(surface, objectives):
     pygame.draw.rect(surface, (174, 144, 52), rect, width=2, border_radius=6)
     surface.blit(title, (rect.left + 14, rect.top + 8))
     surface.blit(text, (rect.left + 14, rect.top + 35))
+
+
+def draw_invincible_indicator(surface, player):
+    if not player.invincible_mode:
+        return
+    text = pygame.font.Font(None, 30).render("Invincible", True, (255, 236, 121))
+    rect = text.get_rect(topleft=(20, 104)).inflate(18, 12)
+    pygame.draw.rect(surface, (24, 24, 20), rect, border_radius=5)
+    pygame.draw.rect(surface, (219, 173, 48), rect, width=2, border_radius=5)
+    surface.blit(text, text.get_rect(center=rect.center))
 
 
 def draw_teleport_waiting_message(surface, map_manager, players, dungeon_unlocked):
@@ -287,6 +317,7 @@ def restart_multiplayer_dungeon(map_manager, player, other_player, player_index,
         current.alive = True
         current.weapon.animation = False
         current.weapon.hitbox = None
+        current.weapon.cancel_charge()
     player.dodging = False
     player.invincible = False
     player.key_count = 0
@@ -296,16 +327,16 @@ def restart_multiplayer_dungeon(map_manager, player, other_player, player_index,
         [(player, 19), (other_player, 19), (player.weapon, 18), (other_player.weapon, 18)],
         player_index=player_index,
     )
-    objectives.step = 5
+    objectives.step = 6
     objectives.progress = 0
 
 
 def restart_solo_dungeon():
-    manager = MapManager(screen_size)
+    manager = MapManager(screen_size, solo_difficulty=True)
     player = Player(manager.spawn1.x, manager.spawn1.y, 130, interface=interface)
     manager.place_player_on_level(player, [(player, 19), (player.weapon, 18)])
     objectives = ObjectiveTracker()
-    objectives.step = 5
+    objectives.step = 6
     return manager, player, objectives
 
 
@@ -355,6 +386,9 @@ def run_game(network, spawn_data, player_index=0):
                     interface.set_walk_surface("grass")
                     return
                 continue
+            if event.type == pygame.KEYDOWN and event.key == pygame.K_a and event.mod & pygame.KMOD_CTRL:
+                p.toggle_invincible_mode()
+                continue
             if victory:
                 if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1 and victory_button_rect(win).collidepoint(event.pos):
                     interface.set_walk_surface("grass")
@@ -371,10 +405,12 @@ def run_game(network, spawn_data, player_index=0):
                     if opening_parchment:
                         objectives.talked_to_oldman()
             if not parchment_open and not map_open and event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-                before = p.weapon.attack_id
-                p.weapon.hit()
-                if p.weapon.attack_id != before:
-                    objectives.record_attack()
+                p.weapon.begin_charge()
+            if event.type == pygame.MOUSEBUTTONUP and event.button == 1 and p.weapon.charging:
+                if not parchment_open and not map_open and p.weapon.release_charge():
+                    objectives.record_attack(p.weapon.charged_attack)
+                else:
+                    p.weapon.cancel_charge()
 
         if p.alive and not parchment_open and not map_open and not victory:
             p.save_location()
@@ -400,9 +436,10 @@ def run_game(network, spawn_data, player_index=0):
             "x": p.position.x, "y": p.position.y, "dir": p.direction, "state": p.state,
             **p.get_dodge_state(), "hit": p.alive and p.weapon.animation,
             "weapon_attack_id": p.weapon.attack_id, "weapon_rect": weapon_rect,
+            "charged_attack": p.weapon.charged_attack,
             "weapon_angle": p.weapon.angle, "weapon_dir": p.weapon.direction, "skin": my_skin,
             "grid_open": map_manager.grid_open, "current_map": map_manager.current_map,
-            "collected_keys": list(p.collected_keys),
+            "collected_keys": list(p.collected_keys), "invincible_mode": p.invincible_mode,
             "objective_step": objectives.step, "tutorial_ready": objectives.can_enter_dungeon(),
             "alive": p.alive, "hp": p.hp, "restart_vote": restart_vote, "restart_id": restart_id,
         })
@@ -436,11 +473,20 @@ def run_game(network, spawn_data, player_index=0):
             p2.state = other["state"]
             p2.alive = other.get("alive", True)
             p2.hp = other.get("hp", p2.hp)
+            p2.invincible_mode = other.get("invincible_mode", False)
             set_player_visible(map_manager, p2, p2.alive)
             if p2.alive:
                 p2.update()
                 p2.apply_remote_dodge_animation(other.get("dodging", False), other.get("dodge_frame", 0))
-                p2.weapon.apply_remote(other["x"], other["y"], other.get("weapon_angle", 0), other.get("weapon_dir", "right"), other.get("hit", False))
+                p2.weapon.apply_remote(
+                    other["x"],
+                    other["y"],
+                    other.get("weapon_angle", 0),
+                    other.get("weapon_dir", "right"),
+                    other.get("hit", False),
+                    other.get("charged_attack", False),
+                    other.get("weapon_attack_id"),
+                )
             remaining = list(data.get("mobs", []))
             for mob in map_manager.mobs:
                 mob_data = next((item for item in remaining if item.get("type") == mob.mob_type), None)
@@ -479,13 +525,20 @@ def run_game(network, spawn_data, player_index=0):
         victory = map_manager.is_victory_ready()
         if p.alive:
             draw_health_bar(win, p.hp, MAX_HP)
+            draw_charge_bar(win, p.weapon)
         draw_grid_message(win, map_manager, p)
-        draw_teleport_waiting_message(win, map_manager, [p, p2], objectives.can_enter_dungeon())
+        draw_teleport_waiting_message(
+            win,
+            map_manager,
+            [p, p2],
+            objectives.can_enter_dungeon() or p.invincible_mode or p2.invincible_mode,
+        )
         if map_open:
             map_manager.draw_level_map(win, p)
         draw_key_inventory(win, map_manager, p)
         if not map_open:
             draw_objective_panel(win, objectives)
+        draw_invincible_indicator(win, p)
         if not p.alive and not defeat:
             draw_spectator_controls(win)
         if parchment_open:
@@ -498,7 +551,7 @@ def run_game(network, spawn_data, player_index=0):
 
 
 def run_solo():
-    map_manager = MapManager(screen_size)
+    map_manager = MapManager(screen_size, solo_difficulty=True)
     interface.set_walk_surface("grass")
     parchment = load_parchment_image()
     parchment_open = False
@@ -536,6 +589,9 @@ def run_solo():
                     interface.set_walk_surface("grass")
                     return
                 continue
+            if event.type == pygame.KEYDOWN and event.key == pygame.K_a and event.mod & pygame.KMOD_CTRL:
+                p.toggle_invincible_mode()
+                continue
             if victory:
                 if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1 and victory_button_rect(win).collidepoint(event.pos):
                     interface.set_walk_surface("grass")
@@ -552,10 +608,12 @@ def run_solo():
                     if opening_parchment:
                         objectives.talked_to_oldman()
             if not parchment_open and not map_open and event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-                before = p.weapon.attack_id
-                p.weapon.hit()
-                if p.weapon.attack_id != before:
-                    objectives.record_attack()
+                p.weapon.begin_charge()
+            if event.type == pygame.MOUSEBUTTONUP and event.button == 1 and p.weapon.charging:
+                if not parchment_open and not map_open and p.weapon.release_charge():
+                    objectives.record_attack(p.weapon.charged_attack)
+                else:
+                    p.weapon.cancel_charge()
         if leave:
             return
         if p.alive and not parchment_open and not map_open and not victory:
@@ -566,7 +624,7 @@ def run_solo():
             p.move(map_manager)
             if p.dodging and not dodging:
                 objectives.record_dodge()
-            if objectives.can_enter_dungeon() and map_manager.teleport_to_level_if_needed(p, [(p, 19), (p.weapon, 18)]):
+            if (objectives.can_enter_dungeon() or p.invincible_mode) and map_manager.teleport_to_level_if_needed(p, [(p, 19), (p.weapon, 18)]):
                 objectives.entered_dungeon()
                 interface.play_music("cave", fadeout_ms=800, fadein_ms=1200)
                 interface.set_walk_surface("cave")
@@ -592,19 +650,21 @@ def run_solo():
                     break
             if p.weapon.hitbox:
                 for mob in map_manager.mobs:
-                    if mob.alive and p.weapon.hitbox.colliderect(mob.hitbox):
-                        mob.take_damage(p.damage, interface)
+                    if mob.alive and p.weapon.hitbox.colliderect(mob.hitbox) and p.weapon.can_damage(mob):
+                        mob.take_damage(p.damage * p.weapon.attack_damage_multiplier, interface)
             map_manager.update_progression(p)
             if map_manager.current_map == "spawn":
                 objectives.update_forest_skeleton_kills(sum(mob.mob_type == "skeleton" and mob.dead for mob in map_manager.mobs))
             objectives.update_keys(p.key_count)
         draw_health_bar(win, p.hp, MAX_HP)
+        draw_charge_bar(win, p.weapon)
         draw_grid_message(win, map_manager, p)
         if map_open:
             map_manager.draw_level_map(win, p)
         draw_key_inventory(win, map_manager, p)
         if not map_open:
             draw_objective_panel(win, objectives)
+        draw_invincible_indicator(win, p)
         if not p.alive:
             draw_solo_defeat(win)
         if parchment_open:

@@ -77,12 +77,16 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 def map_path(relative_path: str) -> str:
     return os.path.join(BASE_DIR, relative_path)
 
+SOLO_GOLEM_HP_MULTIPLIER = 1.5
+
+
 class MapManager:
     BASE_SCREEN_SIZE = (1280, 720)
     BASE_ZOOM = 2
 
-    def __init__(self, screen_size):
+    def __init__(self, screen_size, solo_difficulty=False):
         self.screen_size = screen_size
+        self.solo_difficulty = solo_difficulty
         self.current_map = None
         self.load_map("spawn")
 
@@ -172,6 +176,9 @@ class MapManager:
         self.mobs = []
         for mob_type, spawn in mob_spawns:
             mob = Mob(mob_type, spawn.x, spawn.y, 100)
+            if self.solo_difficulty and mob_type == "golem":
+                mob.max_hp = int(round(mob.max_hp * SOLO_GOLEM_HP_MULTIPLIER))
+                mob.hp = mob.max_hp
             mob.init_pathfinding(self.collisions)
             self.mobs.append(mob)
             self.group.add(mob, layer=18)
@@ -367,7 +374,7 @@ class MapManager:
     def try_open_grid(self, player):
         if not self.is_near_grid(player):
             return False
-        if player.key_count < 2:
+        if player.key_count < 2 and not getattr(player, "invincible_mode", False):
             return True
 
         self.open_grid()

@@ -504,8 +504,8 @@ class Mob(animation.AnimateSprite):
             return
 
         if self.is_hit:
-            self._animate_frames(f"{self.anim_prefix}_hit")
-            if now > self.hit_anim_until:
+            finished = self._animate_once(f"{self.anim_prefix}_hit")
+            if finished or now > self.hit_anim_until:
                 self.is_hit = False
                 self._frame_index = 0
             self._position_rect()
@@ -706,5 +706,8 @@ class Mob(animation.AnimateSprite):
             if self.mob_type == "golem" and self.state in ("attack", "glowing"):
                 return
             self.is_hit = True
-            self.hit_anim_until = pygame.time.get_ticks() + HIT_FLASH_DURATION
+            hit_frames = animation.animations.get(f"{self.anim_prefix}_hit", [])
+            hit_duration = max(HIT_FLASH_DURATION, (len(hit_frames) + 1) * self.animation_speed)
+            self.hit_anim_until = pygame.time.get_ticks() + hit_duration
             self._frame_index = 0
+            self._last_frame_ms = pygame.time.get_ticks()

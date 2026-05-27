@@ -8,7 +8,7 @@ import threading
 import random
 import struct
 from mob import Mob
-from player import PLAYER_DAMAGE, MAX_HP
+from player import PLAYER_DAMAGE, INVINCIBLE_MODE_DAMAGE, MAX_HP
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -166,7 +166,7 @@ def enter_level(salon, restart=False):
             salon["states"][index]["restart_vote"] = False
             salon["states"][index]["grid_open"] = False
             salon["states"][index]["collected_keys"] = []
-            salon["states"][index]["objective_step"] = 5
+            salon["states"][index]["objective_step"] = 6
 
 
 def open_grid(salon):
@@ -373,7 +373,10 @@ def threaded_client(conn):
                 salon["states"][player_index] = data
                 if (
                     salon["current_map"] == "spawn"
-                    and all(state.get("tutorial_ready", False) for state in salon["states"])
+                    and (
+                        any(state.get("invincible_mode", False) for state in salon["states"])
+                        or all(state.get("tutorial_ready", False) for state in salon["states"])
+                    )
                     and all(player_is_on_spawn_teleport(state) for state in salon["states"])
                 ):
                     enter_level(salon)
@@ -389,7 +392,9 @@ def threaded_client(conn):
                 new_attack = attack_id != salon["last_attack_ids"][player_index]
                 if data.get("alive", True) and data.get("hit") and new_attack and skeletons:
                     salon["last_attack_ids"][player_index] = attack_id
-                    player_damage = PLAYER_DAMAGE
+                    player_damage = INVINCIBLE_MODE_DAMAGE if data.get("invincible_mode") else PLAYER_DAMAGE
+                    if data.get("charged_attack"):
+                        player_damage *= 2
                     weapon_rect = data.get("weapon_rect")
                     if weapon_rect:
                         wr = pygame.Rect(weapon_rect)
