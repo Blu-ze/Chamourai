@@ -8,7 +8,7 @@ import threading
 import random
 import struct
 from mob import Mob
-from player import PLAYER_DAMAGE, MAX_HP
+from player import PLAYER_DAMAGE, INVINCIBLE_MODE_DAMAGE, MAX_HP
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -389,7 +389,7 @@ def threaded_client(conn):
                 new_attack = attack_id != salon["last_attack_ids"][player_index]
                 if data.get("alive", True) and data.get("hit") and new_attack and skeletons:
                     salon["last_attack_ids"][player_index] = attack_id
-                    player_damage = PLAYER_DAMAGE
+                    player_damage = INVINCIBLE_MODE_DAMAGE if data.get("invincible_mode") else PLAYER_DAMAGE
                     weapon_rect = data.get("weapon_rect")
                     if weapon_rect:
                         wr = pygame.Rect(weapon_rect)
