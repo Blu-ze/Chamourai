@@ -169,9 +169,10 @@ def spectator_menu_button_rect(surface):
     return pygame.Rect(surface.get_width() - 214, 20, 194, 46)
 
 
-def draw_spectator_controls(surface):
+def draw_spectator_controls(surface, golem_health_bar_visible=False):
     label = pygame.font.Font(None, 30).render("Vous observez la partie", True, (240, 240, 236))
-    surface.blit(label, label.get_rect(midtop=(surface.get_width() // 2, 22)))
+    top = 104 if golem_health_bar_visible else 22
+    surface.blit(label, label.get_rect(midtop=(surface.get_width() // 2, top)))
     draw_button(surface, spectator_menu_button_rect(surface), "Retour au menu")
 
 
@@ -540,7 +541,7 @@ def run_game(network, spawn_data, player_index=0):
             draw_objective_panel(win, objectives)
         draw_invincible_indicator(win, p)
         if not p.alive and not defeat:
-            draw_spectator_controls(win)
+            draw_spectator_controls(win, map_manager.grid_open)
         if parchment_open:
             draw_parchment(win, parchment)
         if victory:
