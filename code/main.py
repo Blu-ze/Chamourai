@@ -311,7 +311,7 @@ def restart_multiplayer_dungeon(map_manager, player, other_player, player_index,
 
 
 def restart_solo_dungeon():
-    manager = MapManager(screen_size)
+    manager = MapManager(screen_size, solo_difficulty=True)
     player = Player(manager.spawn1.x, manager.spawn1.y, 130, interface=interface)
     manager.place_player_on_level(player, [(player, 19), (player.weapon, 18)])
     objectives = ObjectiveTracker()
@@ -518,7 +518,7 @@ def run_game(network, spawn_data, player_index=0):
 
 
 def run_solo():
-    map_manager = MapManager(screen_size)
+    map_manager = MapManager(screen_size, solo_difficulty=True)
     interface.set_walk_surface("grass")
     parchment = load_parchment_image()
     parchment_open = False
