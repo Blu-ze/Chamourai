@@ -78,6 +78,8 @@ def map_path(relative_path: str) -> str:
     return os.path.join(BASE_DIR, relative_path)
 
 class MapManager:
+    BASE_SCREEN_SIZE = (1280, 720)
+    BASE_ZOOM = 2
 
     def __init__(self, screen_size):
         self.screen_size = screen_size
@@ -108,7 +110,9 @@ class MapManager:
             pyscroll.data.TiledMapData(self.tmx_data),
             self.screen_size
         )
-        self.map_layer.zoom = 2
+        width_ratio = self.screen_size[0] / self.BASE_SCREEN_SIZE[0]
+        height_ratio = self.screen_size[1] / self.BASE_SCREEN_SIZE[1]
+        self.map_layer.zoom = self.BASE_ZOOM * max(width_ratio, height_ratio)
 
         self.group = pyscroll.PyscrollGroup(
             map_layer=self.map_layer,

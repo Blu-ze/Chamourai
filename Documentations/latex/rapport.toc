@@ -4,36 +4,37 @@
 \contentsline {section}{\numberline {3}Parcours de jeu et fonctionnalités}{6}{section.3}%
 \contentsline {subsection}{\numberline {3.1}Une progression guidée}{6}{subsection.3.1}%
 \contentsline {subsection}{\numberline {3.2}Exploration et carte}{6}{subsection.3.2}%
-\contentsline {subsection}{\numberline {3.3}Narration environnementale}{7}{subsection.3.3}%
-\contentsline {section}{\numberline {4}Conception technique des cartes}{8}{section.4}%
-\contentsline {subsection}{\numberline {4.1}Cartes produites avec Tiled}{8}{subsection.4.1}%
-\contentsline {subsection}{\numberline {4.2}Collisions des murs et de la grille}{8}{subsection.4.2}%
-\contentsline {subsection}{\numberline {4.3}Pourquoi ce choix est durable}{9}{subsection.4.3}%
-\contentsline {section}{\numberline {5}Système de combat}{10}{section.5}%
-\contentsline {subsection}{\numberline {5.1}Épée orientée par la souris}{10}{subsection.5.1}%
-\contentsline {subsection}{\numberline {5.2}Esquive directionnelle}{10}{subsection.5.2}%
-\contentsline {section}{\numberline {6}Ennemis et adversaires majeurs}{11}{section.6}%
-\contentsline {subsection}{\numberline {6.1}Squelettes et nécromanciens}{11}{subsection.6.1}%
-\contentsline {subsection}{\numberline {6.2}Recherche de chemin}{11}{subsection.6.2}%
-\contentsline {subsection}{\numberline {6.3}Adversaires intermédiaires et clés}{11}{subsection.6.3}%
-\contentsline {subsection}{\numberline {6.4}Le golem, adversaire final}{12}{subsection.6.4}%
-\contentsline {section}{\numberline {7}Interface, graphismes et son}{14}{section.7}%
-\contentsline {subsection}{\numberline {7.1}Direction graphique et animations}{14}{subsection.7.1}%
-\contentsline {subsection}{\numberline {7.2}Retours des personnes ayant essayé le jeu}{14}{subsection.7.2}%
-\contentsline {subsection}{\numberline {7.3}Menus et informations en jeu}{14}{subsection.7.3}%
-\contentsline {subsection}{\numberline {7.4}Musiques et effets sonores}{15}{subsection.7.4}%
-\contentsline {section}{\numberline {8}Mode à deux joueurs en coopération}{17}{section.8}%
-\contentsline {subsection}{\numberline {8.1}Principe de connexion}{17}{subsection.8.1}%
-\contentsline {subsection}{\numberline {8.2}Progression et équilibrage à deux}{17}{subsection.8.2}%
-\contentsline {subsection}{\numberline {8.3}Mort, observation et reprise}{17}{subsection.8.3}%
-\contentsline {section}{\numberline {9}Difficultés rencontrées et choix de conception}{19}{section.9}%
-\contentsline {subsection}{\numberline {9.1}Faire évoluer une carte sans réécrire le jeu}{19}{subsection.9.1}%
-\contentsline {subsection}{\numberline {9.2}Concilier lisibilité et ambition des adversaires majeurs}{19}{subsection.9.2}%
-\contentsline {subsection}{\numberline {9.3}Synchroniser des systèmes devenus interdépendants}{19}{subsection.9.3}%
-\contentsline {subsection}{\numberline {9.4}Intégrer le travail de plusieurs branches}{19}{subsection.9.4}%
-\contentsline {section}{\numberline {10}Communication et organisation}{21}{section.10}%
-\contentsline {subsection}{\numberline {10.1}Outils de communication}{21}{subsection.10.1}%
-\contentsline {subsection}{\numberline {10.2}Gestion des versions}{21}{subsection.10.2}%
-\contentsline {subsection}{\numberline {10.3}Suivi des tâches}{21}{subsection.10.3}%
-\contentsline {section}{\numberline {11}Bilan et perspectives}{23}{section.11}%
-\contentsline {section}{\numberline {12}Annexes}{24}{section.12}%
+\contentsline {subsection}{\numberline {3.3}Narration environnementale}{8}{subsection.3.3}%
+\contentsline {section}{\numberline {4}Conception technique des cartes}{9}{section.4}%
+\contentsline {subsection}{\numberline {4.1}Cartes produites avec \textit {Tiled}}{9}{subsection.4.1}%
+\contentsline {subsection}{\numberline {4.2}Collisions des murs et de la grille}{9}{subsection.4.2}%
+\contentsline {subsection}{\numberline {4.3}Pourquoi ce choix est durable}{10}{subsection.4.3}%
+\contentsline {section}{\numberline {5}Système de combat}{11}{section.5}%
+\contentsline {subsection}{\numberline {5.1}Épée orientée par la souris}{11}{subsection.5.1}%
+\contentsline {subsection}{\numberline {5.2}Esquive directionnelle}{12}{subsection.5.2}%
+\contentsline {section}{\numberline {6}Ennemis et adversaires majeurs}{13}{section.6}%
+\contentsline {subsection}{\numberline {6.1}Squelettes et nécromanciens}{13}{subsection.6.1}%
+\contentsline {subsection}{\numberline {6.2}Recherche de chemin}{13}{subsection.6.2}%
+\contentsline {subsection}{\numberline {6.3}Adversaires intermédiaires et clés}{14}{subsection.6.3}%
+\contentsline {subsection}{\numberline {6.4}Le golem, adversaire final}{15}{subsection.6.4}%
+\contentsline {section}{\numberline {7}Interface, graphismes et son}{17}{section.7}%
+\contentsline {subsection}{\numberline {7.1}Direction graphique et animations}{17}{subsection.7.1}%
+\contentsline {subsection}{\numberline {7.2}Retours des personnes ayant essayé le jeu}{17}{subsection.7.2}%
+\contentsline {subsection}{\numberline {7.3}Menus et informations en jeu}{17}{subsection.7.3}%
+\contentsline {subsection}{\numberline {7.4}Musiques et effets sonores}{19}{subsection.7.4}%
+\contentsline {subsection}{\numberline {7.5}Installation et désinstallation}{20}{subsection.7.5}%
+\contentsline {section}{\numberline {8}Mode à deux joueurs en coopération}{21}{section.8}%
+\contentsline {subsection}{\numberline {8.1}Principe de connexion}{21}{subsection.8.1}%
+\contentsline {subsection}{\numberline {8.2}Progression et équilibrage à deux}{21}{subsection.8.2}%
+\contentsline {subsection}{\numberline {8.3}Mort, observation et reprise}{21}{subsection.8.3}%
+\contentsline {section}{\numberline {9}Difficultés rencontrées et choix de conception}{23}{section.9}%
+\contentsline {subsection}{\numberline {9.1}Faire évoluer une carte sans réécrire le jeu}{23}{subsection.9.1}%
+\contentsline {subsection}{\numberline {9.2}Concilier lisibilité et ambition des adversaires majeurs}{23}{subsection.9.2}%
+\contentsline {subsection}{\numberline {9.3}Synchroniser des systèmes devenus interdépendants}{23}{subsection.9.3}%
+\contentsline {subsection}{\numberline {9.4}Intégrer le travail de plusieurs branches}{24}{subsection.9.4}%
+\contentsline {section}{\numberline {10}Communication et organisation}{25}{section.10}%
+\contentsline {subsection}{\numberline {10.1}Outils de communication}{25}{subsection.10.1}%
+\contentsline {subsection}{\numberline {10.2}Gestion des versions}{25}{subsection.10.2}%
+\contentsline {subsection}{\numberline {10.3}Suivi des tâches}{26}{subsection.10.3}%
+\contentsline {section}{\numberline {11}Bilan et perspectives}{27}{section.11}%
+\contentsline {section}{\numberline {12}Annexes}{28}{section.12}%

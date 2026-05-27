@@ -18,9 +18,12 @@ def asset_path(relative_path):
     return os.path.join(BASE_DIR, relative_path)
 
 
-win = pygame.display.set_mode((1280, 720))
+desktop_sizes = pygame.display.get_desktop_sizes()
+screen_size = desktop_sizes[0] if desktop_sizes else (1280, 720)
+# Une fenêtre sans bordure à la taille du bureau évite les bandes ajoutées
+# par certains écrans en plein écran exclusif.
+win = pygame.display.set_mode(screen_size, pygame.NOFRAME)
 pygame.display.set_caption("Chamourai")
-screen_size = (1280, 720)
 interface = Interface(screen_size, win)
 KEY_ICON = pygame.transform.scale(
     pygame.image.load(asset_path("assets/key/key.png")).convert_alpha(),
@@ -481,7 +484,8 @@ def run_game(network, spawn_data, player_index=0):
         if map_open:
             map_manager.draw_level_map(win, p)
         draw_key_inventory(win, map_manager, p)
-        draw_objective_panel(win, objectives)
+        if not map_open:
+            draw_objective_panel(win, objectives)
         if not p.alive and not defeat:
             draw_spectator_controls(win)
         if parchment_open:
@@ -599,7 +603,8 @@ def run_solo():
         if map_open:
             map_manager.draw_level_map(win, p)
         draw_key_inventory(win, map_manager, p)
-        draw_objective_panel(win, objectives)
+        if not map_open:
+            draw_objective_panel(win, objectives)
         if not p.alive:
             draw_solo_defeat(win)
         if parchment_open:

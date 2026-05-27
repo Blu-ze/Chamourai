@@ -20,24 +20,27 @@
 
 \newcommand{\sectionbreak}{\clearpage}
 \newcommand{\newsubsection}[1]{\clearpage\subsection{#1}}
-\newcommand{\imageplaceholder}[2]{%
+\newcommand{\singleimage}[3][0.76\textwidth]{%
     \begin{figure}[H]
         \centering
-        \fbox{%
-            \parbox[c][3.8cm][c]{0.88\textwidth}{%
-                \centering
-                \textbf{Emplacement d'image à remplacer}\\[0.35cm]
-                \emph{#2}
-            }%
-        }
-        \caption{#1}
+        \includegraphics[width=#1, height=0.53\textheight, keepaspectratio]{#2}
+        \caption{#3}
+    \end{figure}
+}
+\newcommand{\doubleimage}[3]{%
+    \begin{figure}[H]
+        \centering
+        \includegraphics[width=0.46\textwidth, height=0.34\textheight, keepaspectratio]{#1}
+        \hfill
+        \includegraphics[width=0.46\textwidth, height=0.34\textheight, keepaspectratio]{#2}
+        \caption{#3}
     \end{figure}
 }
 
 \setcounter{tocdepth}{2}
 
-\title{\textbf{Chamouraï} \\ Rapport de soutenance}
-\author{Les Chatpitres}
+\title{\textbf{\textit{Chamouraï}} \\ Rapport de soutenance}
+\author{\textit{Les Chatpitres}}
 \date{}
 
 \begin{document}
@@ -58,8 +61,8 @@
 
 \section{Introduction}
 
-\textit{Chamouraï} est un jeu d'action et d'aventure en vue du dessus, réalisé en Python avec
-Pygame. Le joueur incarne un chat samouraï qui doit progresser d'une forêt vers un
+\textit{Chamouraï} est un jeu d'action et d'aventure en vue du dessus, réalisé en \textit{Python} avec
+\textit{Pygame}. Le joueur incarne un chat samouraï qui doit progresser d'une forêt vers un
 donjon, affronter des ennemis de plus en plus dangereux, réunir deux clés puis vaincre
 un golem. Notre objectif était de proposer une expérience immédiatement jouable, mais
 qui demande de maîtriser progressivement le placement, l'esquive et le rythme des
@@ -84,7 +87,7 @@ association nous a conduit à imaginer un héros à la fois attachant et combatt
 un chat samouraï placé dans un monde menacé, mais encore riche en couleurs et en
 détails.
 
-\imageplaceholder{Vue générale d'une partie de \textit{Chamouraï}}{Capture du joueur dans la forêt, avec plusieurs squelettes visibles, l'interface de vie et le panneau d'objectif en haut à gauche.}
+\singleimage{image1.png}{Vue générale d'une partie de \textit{Chamouraï}}
 
 \sectionbreak
 \section{Répartition des rôles}
@@ -94,20 +97,20 @@ détails.
 \hline
 \textbf{Membre} & \textbf{Responsabilités principales} \\
 \hline
-Baptiste LOISEAU & Chef de projet, conception des cartes, jouabilité, intégration graphique et équilibrage des combats \\
+\textit{Baptiste LOISEAU} & Chef de projet, conception des cartes, jouabilité, intégration graphique et équilibrage des combats \\
 \hline
-Lucas HUET & Interfaces, menus, musiques, effets sonores et réglages du son \\
+\textit{Lucas HUET} & Interfaces, menus, musiques, effets sonores et réglages du son \\
 \hline
-Loan BLANPAIN & Site internet, scénario, univers et communication du projet \\
+\textit{Loan BLANPAIN} & Site internet, scénario, univers et communication du projet \\
 \hline
-Simon BOURGEOIS & Intelligence artificielle, déplacements des ennemis et multijoueur \\
+\textit{Simon BOURGEOIS} & Intelligence artificielle, déplacements des ennemis et multijoueur \\
 \hline
 \end{tabular}
 \end{center}
 
 Cette répartition nous a donné des domaines de responsabilité clairs, mais le jeu ne
 peut pas être assemblé en isolant complètement les tâches. Par exemple, une nouvelle
-zone créée dans Tiled influence les collisions, l'intelligence artificielle, les
+zone créée dans \textit{Tiled} influence les collisions, l'intelligence artificielle, les
 objectifs, les sons et la synchronisation réseau. Une partie importante du travail a
 donc été l'intégration : vérifier ensemble les ajouts de chacun et résoudre les conflits
 lorsque plusieurs fonctionnalités modifiaient la boucle principale du jeu.
@@ -137,7 +140,7 @@ actions essentielles. À deux joueurs, les éliminations utiles à l'apprentissa
 synchronisées : les deux joueurs partagent ainsi la même progression au lieu de se
 retrouver bloqués à des étapes différentes.
 
-\imageplaceholder{Apprentissage et objectifs successifs}{Capture du début de partie avec le panneau d'objectif affichant « Parler au vieil homme », puis une étape chiffrée comme « Frapper 3 fois ».}
+\singleimage[0.43\textwidth]{image2.png}{Premier objectif de l'apprentissage guidé}
 
 \subsection{Exploration et carte}
 
@@ -154,10 +157,11 @@ deux clés, le joueur peut appuyer sur \texttt{E} pour ouvrir le passage. Cette
 interaction relie combat et exploration : éliminer les adversaires majeurs a une conséquence visible
 sur la carte.
 
-\imageplaceholder{Carte du niveau et position du joueur}{Capture de la carte ouverte avec la position du joueur, les principales salles et la zone de l'adversaire final.}
+\singleimage{image3.png}{Carte du niveau et position du joueur}
 
-\imageplaceholder{Grille et compteur de clés}{Capture devant la grille fermée, avec les deux emplacements de clés à l'écran et le message demandant deux clés.}
+\singleimage{image4.png}{Grille fermée et emplacements de clés}
 
+\newpage
 \subsection{Narration environnementale}
 
 Un vieil homme animé est présent dans la zone de départ. Lorsque le joueur s'approche,
@@ -172,33 +176,33 @@ un objectif au personnage avant son premier affrontement, sans imposer une longu
 séquence d'explication séparée du jeu. Nous avons ralenti l'animation de la touche
 d'interaction afin qu'elle attire l'attention sans clignoter de manière gênante.
 
-\imageplaceholder{Interaction avec le vieil homme}{Capture du vieil homme avec l'icône E visible, puis du parchemin ouvert en superposition à l'écran.}
+\doubleimage{image5-1.png}{image5-2.png}{Interaction avec le vieil homme et lecture du parchemin}
 
 \sectionbreak
 \section{Conception technique des cartes}
 
-\subsection{Cartes produites avec Tiled}
+\subsection{Cartes produites avec \textit{Tiled}}
 
-Les niveaux sont dessinés avec Tiled, qui permet de superposer des calques de tuiles et
+Les niveaux sont dessinés avec \textit{Tiled}, qui permet de superposer des calques de tuiles et
 des calques d'objets. Le programme charge les fichiers \texttt{.tmx} et convertit leur
 contenu en éléments de jeu. Cette méthode est beaucoup plus souple que d'écrire les
-positions directement en Python : la carte peut être retouchée visuellement sans
+positions directement en \textit{Python} : la carte peut être retouchée visuellement sans
 modifier la logique centrale.
 
 La forêt devait être davantage qu'une simple zone de départ. Nous souhaitions créer
 un environnement immersif et particulièrement détaillé, afin que le joueur ressente
 la différence entre un extérieur encore vivant, mais désormais dangereux, et
-l'intérieur minéral du donjon. Le travail par calques dans Tiled nous a permis
+l'intérieur minéral du donjon. Le travail par calques dans \textit{Tiled} nous a permis
 d'ajouter du relief visuel et des éléments de décor sans perdre la lisibilité des
 chemins et des combats.
 
-Pour les ennemis, chaque objet Tiled portant le nom \texttt{Skeleton},
+Pour les ennemis, chaque objet \textit{Tiled} portant le nom \texttt{Skeleton},
 \texttt{Necromancer}, \texttt{SkeletonBoss}, \texttt{NecromancerBoss} ou
 \texttt{Golem} crée automatiquement le monstre correspondant. Ajouter un squelette
 revient donc à déposer un nouvel objet sur la carte. Le même principe est utilisé pour
 les zones d'apparition et d'interaction.
 
-\imageplaceholder{Édition du niveau dans Tiled}{Capture de Tiled montrant les objets Skeleton, NecromancerBoss et Golem placés sur le niveau ainsi que les calques Walls, Grid et GridKey.}
+\singleimage{image6.png}{Édition du niveau dans \textit{Tiled}}
 
 \subsection{Collisions des murs et de la grille}
 
@@ -212,7 +216,7 @@ L'accès à l'adversaire final a nécessité une distinction importante. Le calq
 calque d'objets \texttt{GridKey} définit uniquement la zone où le message
 d'interaction apparaît. Confondre ces deux types de calques entraînait une erreur au
 chargement, car une tuile fournit des coordonnées et un identifiant tandis qu'un
-objet Tiled fournit un rectangle. Après ouverture, le calque visuel de la grille est
+objet \textit{Tiled} fournit un rectangle. Après ouverture, le calque visuel de la grille est
 masqué et ses collisions sont retirées simultanément.
 
 \subsection{Pourquoi ce choix est durable}
@@ -250,8 +254,9 @@ continu le mouvement de la souris à l'orientation de l'arme. Elle nous a notamm
 obligés à mobiliser des notions de géométrie et de trigonométrie pour obtenir un
 comportement fluide et compréhensible.
 
-\imageplaceholder{Attaque orientée par le curseur}{Deux captures côte à côte : le joueur attaque vers la droite puis vers la gauche, avec le curseur visible.}
+\doubleimage{image7-1.png}{image7-2.png}{Attaque orientée par le curseur dans deux directions}
 
+\newpage
 \subsection{Esquive directionnelle}
 
 L'esquive fonctionnait initialement seulement sur un axe horizontal : regarder à
@@ -285,20 +290,20 @@ immobile.
 
 \subsection{Recherche de chemin}
 
-Les monstres utilisent une recherche de chemin basée sur A*. Nous avons préféré A* à
-Dijkstra car notre objectif n'est pas d'explorer toutes les distances possibles, mais
+Les monstres utilisent une recherche de chemin basée sur \textit{A*}. Nous avons préféré \textit{A*} à
+\textit{Dijkstra} car notre objectif n'est pas d'explorer toutes les distances possibles, mais
 de diriger efficacement un ennemi vers une cible connue en tenant compte des murs. Son
 heuristique limite la quantité de cases inspectées et convient à une carte découpée en
 tuiles.
 
-L'intégration a été délicate : un ennemi doit éviter les murs de Tiled, garder une
+L'intégration a été délicate : un ennemi doit éviter les murs de \textit{Tiled}, garder une
 distance raisonnable avec les autres ennemis et continuer à attaquer lorsque le joueur
 est accessible. Un trajet mathématiquement court n'est pas toujours agréable en jeu,
 notamment lorsque tous les ennemis choisissent exactement le même passage. L'espacement
 ajouté aux squelettes répond donc à un besoin de jouabilité autant qu'à un problème de
 collision.
 
-\imageplaceholder{Affrontement avec différents ennemis}{Capture d'une salle montrant des squelettes espacés et un nécromancien attaquant à distance.}
+\singleimage[0.55\textwidth]{image8.png}{Affrontement avec différents ennemis}
 
 \subsection{Adversaires intermédiaires et clés}
 
@@ -308,8 +313,9 @@ qui préparent à l'adversaire final. À leur mort, ils déposent chacun une cl�
 un objet ramassable. Ce choix rend la progression immédiatement lisible : le joueur
 voit l'objet obtenu et le compteur de clés confirme son avancement.
 
-\imageplaceholder{Adversaire intermédiaire et clé déposée}{Capture d'un adversaire majeur avec sa barre de vie, puis de la clé apparue au sol après sa défaite.}
+\doubleimage{image9-1.png}{image9-2.png}{Adversaire intermédiaire et clé déposée}
 
+\newpage
 \subsection{Le golem, adversaire final}
 
 Le golem est le point culminant du niveau. Son échelle est volontairement imposante et
@@ -336,9 +342,9 @@ La mort du golem joue une animation plus longue et laisse son corps visible, ce 
 donne du poids à la victoire. L'écran de fin propose ensuite un retour au menu
 principal.
 
-\imageplaceholder{Combat contre le golem en phase 2}{Capture du golem lumineux, avec sa barre de vie en haut de l'écran et son onde de choc bleue en arc de cercle.}
+\singleimage{image10.png}{Combat contre le golem en seconde phase}
 
-\imageplaceholder{Écran de victoire}{Capture de l'écran affiché après la mort du golem, avec le bouton permettant de retourner au menu principal.}
+\singleimage{image11.png}{Écran de victoire après la défaite du golem}
 
 \sectionbreak
 \section{Interface, graphismes et son}
@@ -386,15 +392,18 @@ golem lors du combat final.
     \caption{Interface principale du jeu}
 \end{figure}
 
-\imageplaceholder{Menu du jeu à deux}{Capture du menu permettant de rejoindre ou créer une partie, avec le bouton Retour visible.}
+\singleimage[0.48\textwidth]{image12.png}{Menu du jeu à deux}
 
+\newpage
 \subsection{Musiques et effets sonores}
 
 Les sons et musiques renforcent la compréhension de l'action : bruit d'attaque,
 ambiances et transitions musicales accompagnent les différents états de partie. La
 musique du donjon est lancée lors de l'entrée dans le niveau ou d'une reprise, puis une
-musique de combat final prend le relais lorsque la grille s'ouvre. Le menu des sons permet de
-régler l'expérience sans modifier le code.
+musique de combat final prend le relais lorsque la grille s'ouvre. Le menu des sons permet au
+joueur d'ajuster librement le volume, avec un réglage indépendant pour la musique et pour les
+effets sonores. Il peut ainsi conserver l'ambiance musicale tout en atténuant les bruits
+d'action, ou au contraire mieux entendre les indications liées au combat.
 
 Nous avons également différencié les sons selon le lieu : les pas sur l'herbe dans
 la zone extérieure ne sont pas ceux des pas sur la pierre du donjon. Les musiques
@@ -414,6 +423,25 @@ plutôt que de déclencher un son de manière diffuse à chaque rafraîchissemen
     \includegraphics[width=0.6\textwidth]{sons.png}
     \caption{Organisation des ressources sonores}
 \end{figure}
+
+\newpage
+\subsection{Installation et désinstallation}
+
+Pour rendre \textit{Chamouraï} facilement accessible, nous avons préparé un programme
+d'installation au format exécutable. Son utilisation est volontairement simple : le
+joueur le lance, choisit l'emplacement où il souhaite installer le jeu, puis peut
+accéder à celui-ci sans avoir à configurer manuellement son environnement. Un
+programme de désinstallation est également fourni afin de retirer proprement le jeu
+de l'ordinateur lorsque l'utilisateur ne souhaite plus le conserver.
+
+Lors de l'exécution du programme d'installation, \textit{Windows} peut néanmoins
+afficher un avertissement de sécurité. Cet avertissement ne provient pas d'un problème
+identifié dans le jeu, mais du fait que notre exécutable n'est pas signé par un
+certificat reconnu par \textit{Microsoft}. En tant qu'équipe étudiante, nous ne sommes
+pas enregistrés comme éditeur de confiance auprès du système. Pour une diffusion plus
+large, une évolution importante consisterait donc à signer numériquement le programme
+d'installation, afin d'identifier clairement son origine et de rassurer davantage les
+utilisateurs au moment de son lancement.
 
 \sectionbreak
 \section{Mode à deux joueurs en coopération}
@@ -465,9 +493,9 @@ réapparition et musique. Nous avons retenu un redémarrage au début du donjon 
 qu'au tout début du jeu afin de respecter le principe d'apprentissage par l'échec sans
 imposer à nouveau l'apprentissage guidé.
 
-\imageplaceholder{Partie en coopération et joueur observateur}{Capture d'une partie à deux où un joueur combat tandis que l'autre, mort, observe la partie avec sa caméra centrée sur son partenaire.}
+\singleimage{image13.png}{Partie en coopération avec un joueur observateur}
 
-\imageplaceholder{Défaite et vote de reprise}{Capture de l'écran de défaite à deux joueurs présentant le bouton de retour et le bouton de vote pour recommencer.}
+\singleimage{image14.png}{Défaite à deux joueurs et vote de reprise}
 
 \sectionbreak
 \section{Difficultés rencontrées et choix de conception}
@@ -475,7 +503,7 @@ imposer à nouveau l'apprentissage guidé.
 \subsection{Faire évoluer une carte sans réécrire le jeu}
 
 Le placement en dur des monstres était rapide pour un prototype, mais devenait un
-frein dès que la carte changeait. L'utilisation des objets Tiled a demandé de définir
+frein dès que la carte changeait. L'utilisation des objets \textit{Tiled} a demandé de définir
 des conventions de nommage et de gérer plusieurs types de monstres, mais elle permet
 aujourd'hui d'ajouter une rencontre sans toucher au code. De même, les collisions par
 calque ont transformé une tâche manuelle et fragile en une opération de conception de niveau.
@@ -502,6 +530,7 @@ laisserait une grille déjà ouverte ou un adversaire majeur déjà vaincu. Le r
 en cohérence tout l'état du donjon. Ce travail est moins visible qu'une image animée ou un
 menu, mais il conditionne la fiabilité de l'expérience en coopération.
 
+\newpage
 \subsection{Intégrer le travail de plusieurs branches}
 
 Le développement en parallèle a permis d'avancer rapidement sur le son, les ennemis,
@@ -523,21 +552,21 @@ un emplacement clair, plus une future évolution est vérifiable et intégrable.
 
 Le serveur \textit{Discord} centralise les échanges techniques, les ressources et les
 réunions vocales. Il permet de signaler rapidement une anomalie, de montrer une capture ou
-de demander une vérification après une intégration. Instagram est utilisé de manière
+de demander une vérification après une intégration. \textit{Instagram} est utilisé de manière
 complémentaire pour des messages rapides et les imprévus.
 
 \begin{figure}[H]
     \centering
     \includegraphics[width=0.58\textwidth]{discord.png}
-    \caption{Serveur Discord du groupe Les Chatpitres}
+    \caption{Serveur \textit{Discord} du groupe \textit{Les Chatpitres}}
 \end{figure}
 
 \subsection{Gestion des versions}
 
-Nous utilisons Git pour répartir le développement et conserver l'historique du
-projet. Afin de réduire les conflits, nous communiquons sur Discord avant d'intervenir
+Nous utilisons \textit{Git} pour répartir le développement et conserver l'historique du
+projet. Afin de réduire les conflits, nous communiquons sur \textit{Discord} avant d'intervenir
 sur une même branche ou sur un même fichier important. Les images et les sons étant
-volumineux, nous utilisons également Git LFS, une extension de Git adaptée au suivi
+volumineux, nous utilisons également \textit{Git LFS}, une extension de \textit{Git} adaptée au suivi
 de ces fichiers.
 
 Malgré cette organisation, les fusions de branches ont parfois été délicates. Le
@@ -548,6 +577,7 @@ avec le risque de perdre une fonction déjà réalisée. Cette difficulté nous 
 mieux communiquer avant les fusions et à vérifier systématiquement les fonctions
 importantes après leur résolution.
 
+\newpage
 \subsection{Suivi des tâches}
 
 Nous organisons le travail à l'aide de \textit{MeisterTask}. Chaque tâche possède un
@@ -559,7 +589,7 @@ plus importants.
 \begin{figure}[H]
     \centering
     \includegraphics[width=0.6\textwidth]{meistertask.png}
-    \caption{Tableau de suivi des tâches sur MeisterTask}
+    \caption{Tableau de suivi des tâches sur \textit{MeisterTask}}
 \end{figure}
 
 Dans les dernières phases, l'organisation des vérifications est devenue aussi importante que
@@ -586,7 +616,7 @@ maîtriser.
 Pour une version future, nous pourrions compléter les vérifications du réseau sur des connexions
 moins stables et approfondir le combat contre le golem. Nous avions notamment imaginé
 son attaque de rayon lumineux avant de l'abandonner, car les ressources graphiques
-étaient difficiles à exploiter correctement avec Pygame ; l'onde de choc en arc de
+étaient difficiles à exploiter correctement avec \textit{Pygame} ; l'onde de choc en arc de
 cercle constitue la solution que nous avons su rendre fonctionnelle.
 
 Nous aurions aussi aimé proposer plusieurs niveaux et permettre au joueur de
@@ -594,8 +624,6 @@ débloquer de nouvelles armes au fil de sa progression. Nous avons finalement pr
 concentrer nos efforts sur un unique niveau détaillé, avec une progression complète,
 plusieurs adversaires et un combat final, plutôt que de multiplier des zones moins
 abouties.
-
-\imageplaceholder{Équipe ou écran final du projet}{Capture finale représentative du jeu terminé : victoire contre le golem, ou montage des principales scènes du niveau.}
 
 \sectionbreak
 \section{Annexes}
@@ -609,9 +637,11 @@ abouties.
 \begin{figure}[H]
     \centering
     \includegraphics[width=0.22\textwidth]{instagram.png}
-    \caption{Groupe Instagram de communication rapide}
+    \caption{Groupe \textit{Instagram} de communication rapide}
 \end{figure}
 
-\imageplaceholder{Liste des ressources visuelles complémentaires}{Emplacement éventuel pour une planche réunissant les images des clés, du vieil homme, des adversaires majeurs et du golem.}
+\singleimage{annexe1.png}{La carte de départ dans son entièreté}
+
+\singleimage[0.45\textwidth]{annexe2.png}{L'adversaire intermédiaire nécromancien}
 
 \end{document}

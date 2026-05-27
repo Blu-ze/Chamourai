@@ -3,8 +3,8 @@ import animation
 from weapon import Weapon
 
 MAX_HP         = 70
-PLAYER_DAMAGE  = 2.5
-PLAYER_SPEED   = 4
+PLAYER_DAMAGE  = 25
+PLAYER_SPEED   = 15
 DODGE_SPEED    = 8    # vitesse de déplacement pendant l'esquive
 DODGE_COOLDOWN = 1000  # ms avant de pouvoir esquiver à nouveau
 DODGE_ANIMATION_SPEED = 60  # ms entre chaque frame de l'esquive
