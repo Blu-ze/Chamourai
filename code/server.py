@@ -8,7 +8,7 @@ import threading
 import random
 import struct
 from mob import Mob
-from player import PLAYER_DAMAGE, INVINCIBLE_MODE_DAMAGE, MAX_HP
+from player import PLAYER_DAMAGE, MAX_HP
 from weapon import CHARGED_DAMAGE_MULTIPLIER
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -374,10 +374,7 @@ def threaded_client(conn):
                 salon["states"][player_index] = data
                 if (
                     salon["current_map"] == "spawn"
-                    and (
-                        any(state.get("invincible_mode", False) for state in salon["states"])
-                        or all(state.get("tutorial_ready", False) for state in salon["states"])
-                    )
+                    and all(state.get("tutorial_ready", False) for state in salon["states"])
                     and all(player_is_on_spawn_teleport(state) for state in salon["states"])
                 ):
                     enter_level(salon)
@@ -393,7 +390,7 @@ def threaded_client(conn):
                 new_attack = attack_id != salon["last_attack_ids"][player_index]
                 if data.get("alive", True) and data.get("hit") and new_attack and skeletons:
                     salon["last_attack_ids"][player_index] = attack_id
-                    player_damage = INVINCIBLE_MODE_DAMAGE if data.get("invincible_mode") else PLAYER_DAMAGE
+                    player_damage = PLAYER_DAMAGE
                     if data.get("charged_attack"):
                         player_damage *= CHARGED_DAMAGE_MULTIPLIER
                     weapon_rect = data.get("weapon_rect")
