@@ -129,6 +129,7 @@ avons ajouté une suite d'objectifs affichée en haut à gauche de l'écran :
 \begin{enumerate}
     \item parler au vieil homme afin de découvrir le parchemin et l'interaction ;
     \item frapper trois fois afin de comprendre l'utilisation de l'épée ;
+    \item effectuer un coup chargé afin de découvrir une attaque plus puissante ;
     \item esquiver trois fois pour apprendre la mobilité défensive ;
     \item éliminer trois squelettes dans la forêt ;
     \item entrer dans le donjon ;
@@ -257,6 +258,24 @@ obligés à mobiliser des notions de géométrie et de trigonométrie pour obten
 comportement fluide et compréhensible.
 
 \doubleimage{image7-1.png}{image7-2.png}{Attaque orientée par le curseur dans deux directions}
+
+\subsection{Coup chargé et prise de risque}
+
+Nous avons enrichi l'épée avec une attaque chargée. En maintenant le bouton de la
+souris, le joueur prépare son coup ; une barre de charge apparaît alors à l'écran et
+indique clairement quand l'attaque a atteint sa pleine puissance. Au relâchement, le
+coup utilise une animation différente de celle d'une attaque normale, afin que les
+deux actions soient immédiatement reconnaissables, et inflige quatre fois les dégâts
+d'une attaque normale.
+
+Cette mécanique apporte un choix supplémentaire au combat. Frapper immédiatement
+permet de rester réactif face à un ennemi proche, tandis que charger l'épée permet de
+réduire fortement la vie d'un adversaire résistant. En contrepartie, attendre avant
+de frapper expose davantage le joueur aux attaques. Nous avons placé cette découverte
+dans l'apprentissage guidé, juste après les trois frappes normales, afin que le joueur
+comprenne la différence entre rapidité et puissance avant ses premiers affrontements.
+
+\doubleimage{image15.png}{image16.png}{Barre de préparation et animation du coup chargé, quatre fois plus puissant}
 
 \newpage
 \subsection{Esquive directionnelle}
@@ -479,7 +498,10 @@ de son partenaire pendant qu'il termine un combat ou lit un parchemin.
 À deux, tous les monstres possèdent deux fois plus de vie. Sans cette adaptation, les
 deux épées réduiraient fortement la durée des affrontements, en particulier contre les
 adversaires majeurs. Le doublement des points de vie est un réglage simple, cohérent et compréhensible
-pour maintenir l'intérêt des combats en coopération.
+pour maintenir l'intérêt des combats en coopération. L'équilibrage ne consiste cependant
+pas à rendre les deux modes identiques : en partie seule, la vie du golem est également
+renforcée afin que l'affrontement final reste exigeant malgré la concentration des
+actions sur un seul joueur.
 
 \subsection{Mort, observation et reprise}
 
@@ -518,6 +540,37 @@ manquaient de fiabilité. Le passage à une onde de choc nous a appris qu'une m�
 plus maîtrisée est préférable à un effet complexe qui semble injuste. La seconde phase
 reste marquante grâce au changement visuel, aux statistiques renforcées et à la
 nouvelle attaque.
+
+\subsection{Obtenir un équilibrage jouable par les essais}
+
+L'équilibrage n'a pas pu être défini correctement dès la première version. Une valeur
+qui semblait convenir face à un squelette isolé devenait trop avantageuse lorsque
+plusieurs ennemis se superposaient, et un combat satisfaisant seul pouvait devenir trop
+court ou au contraire trop difficile à deux joueurs. Nous avons donc dû essayer
+régulièrement les combats en situation réelle : dans la forêt, devant les adversaires
+intermédiaires, puis face au golem dans ses deux phases.
+
+Ces essais ont conduit à plusieurs ajustements. Les squelettes ont reçu un espacement
+pour ne plus former un groupe facile à toucher d'un seul coup ; les nécromanciens ont
+été rendus moins résistants afin que leurs attaques à distance restent menaçantes sans
+rendre les affrontements trop longs ; les adversaires intermédiaires conservent une
+vie nettement supérieure pour marquer leur rôle dans la progression. Le golem a aussi
+été ajusté séparément, car sa durée de combat, ses attaques et son changement de phase
+déterminent largement le rythme de la fin du niveau.
+
+L'ajout du coup chargé a nécessité une nouvelle série d'essais. Comme cette attaque
+récompense le joueur par des dégâts élevés, il fallait vérifier qu'elle ne supprimait
+pas l'intérêt de l'esquive ni la dangerosité des adversaires majeurs. Nous avons
+également vérifié qu'un coup ne pouvait pas retirer plusieurs fois de la vie au même
+ennemi au cours d'une seule animation, et que les animations de blessure restaient
+compréhensibles en coopération.
+
+Enfin, le jeu à deux a demandé des vérifications particulières : synchronisation des
+points de vie, élimination d'un ennemi visible sur les deux écrans, récupération des
+clés, ouverture de la grille, mort d'un joueur, observation de la partie et reprise
+après une défaite. Cette succession d'essais et de corrections a permis d'obtenir une
+version jouable, dans laquelle la difficulté progresse sans rendre les règles
+incompréhensibles ou injustes.
 
 \subsection{Synchroniser des systèmes devenus interdépendants}
 
