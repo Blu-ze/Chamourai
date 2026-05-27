@@ -3,7 +3,7 @@ import animation
 import math
 
 CHARGE_DURATION_MS = 450
-CHARGED_DAMAGE_MULTIPLIER = 2
+CHARGED_DAMAGE_MULTIPLIER = 4
 
 
 class Weapon(animation.AnimateSprite):

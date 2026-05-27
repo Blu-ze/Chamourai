@@ -9,6 +9,7 @@ import random
 import struct
 from mob import Mob
 from player import PLAYER_DAMAGE, INVINCIBLE_MODE_DAMAGE, MAX_HP
+from weapon import CHARGED_DAMAGE_MULTIPLIER
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -394,7 +395,7 @@ def threaded_client(conn):
                     salon["last_attack_ids"][player_index] = attack_id
                     player_damage = INVINCIBLE_MODE_DAMAGE if data.get("invincible_mode") else PLAYER_DAMAGE
                     if data.get("charged_attack"):
-                        player_damage *= 2
+                        player_damage *= CHARGED_DAMAGE_MULTIPLIER
                     weapon_rect = data.get("weapon_rect")
                     if weapon_rect:
                         wr = pygame.Rect(weapon_rect)
