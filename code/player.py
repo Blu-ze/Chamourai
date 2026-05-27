@@ -2,6 +2,8 @@ import pygame
 import animation
 from weapon import Weapon
 
+
+
 MAX_HP         = 50
 PLAYER_DAMAGE  = 2.5
 PLAYER_SPEED   = 4
