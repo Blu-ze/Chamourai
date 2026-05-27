@@ -373,7 +373,10 @@ def threaded_client(conn):
                 salon["states"][player_index] = data
                 if (
                     salon["current_map"] == "spawn"
-                    and all(state.get("tutorial_ready", False) for state in salon["states"])
+                    and (
+                        any(state.get("invincible_mode", False) for state in salon["states"])
+                        or all(state.get("tutorial_ready", False) for state in salon["states"])
+                    )
                     and all(player_is_on_spawn_teleport(state) for state in salon["states"])
                 ):
                     enter_level(salon)

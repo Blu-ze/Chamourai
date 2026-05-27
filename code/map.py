@@ -367,7 +367,7 @@ class MapManager:
     def try_open_grid(self, player):
         if not self.is_near_grid(player):
             return False
-        if player.key_count < 2:
+        if player.key_count < 2 and not getattr(player, "invincible_mode", False):
             return True
 
         self.open_grid()

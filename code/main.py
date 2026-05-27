@@ -65,7 +65,7 @@ class ObjectiveTracker:
         return self.step >= 4
 
     def entered_dungeon(self):
-        if self.step == 4:
+        if self.step <= 4:
             self.step = 5
             self.progress = 0
 
@@ -204,7 +204,7 @@ def draw_grid_message(surface, map_manager, player):
         return
     message = (
         "Appuyez sur E pour ouvrir la grille"
-        if player.key_count >= 2
+        if player.key_count >= 2 or player.invincible_mode
         else f"Il faut 2 cles pour ouvrir la grille ({player.key_count}/2)"
     )
     text = pygame.font.Font(None, 34).render(message, True, (255, 255, 255))
@@ -449,6 +449,7 @@ def run_game(network, spawn_data, player_index=0):
             p2.state = other["state"]
             p2.alive = other.get("alive", True)
             p2.hp = other.get("hp", p2.hp)
+            p2.invincible_mode = other.get("invincible_mode", False)
             set_player_visible(map_manager, p2, p2.alive)
             if p2.alive:
                 p2.update()
@@ -493,7 +494,12 @@ def run_game(network, spawn_data, player_index=0):
         if p.alive:
             draw_health_bar(win, p.hp, MAX_HP)
         draw_grid_message(win, map_manager, p)
-        draw_teleport_waiting_message(win, map_manager, [p, p2], objectives.can_enter_dungeon())
+        draw_teleport_waiting_message(
+            win,
+            map_manager,
+            [p, p2],
+            objectives.can_enter_dungeon() or p.invincible_mode or p2.invincible_mode,
+        )
         if map_open:
             map_manager.draw_level_map(win, p)
         draw_key_inventory(win, map_manager, p)
@@ -583,7 +589,7 @@ def run_solo():
             p.move(map_manager)
             if p.dodging and not dodging:
                 objectives.record_dodge()
-            if objectives.can_enter_dungeon() and map_manager.teleport_to_level_if_needed(p, [(p, 19), (p.weapon, 18)]):
+            if (objectives.can_enter_dungeon() or p.invincible_mode) and map_manager.teleport_to_level_if_needed(p, [(p, 19), (p.weapon, 18)]):
                 objectives.entered_dungeon()
                 interface.play_music("cave", fadeout_ms=800, fadein_ms=1200)
                 interface.set_walk_surface("cave")
